@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工程師排班管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0 12px;
+        }
+
+        .control-panel {
+            background: linear-gradient(to bottom, #ffffff, #f8fafb);
+            border-bottom: 1px solid #e0e3e8;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .control-content {
+            padding: 12px 0;
+        }
+
+        .control-section {
+            margin-bottom: 10px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .row-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .row-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #34495e;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 8px 10px;
+            border: 1px solid #d5dce0;
+            border-radius: 5px;
+            font-size: 13px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input[readonly] {
+            background-color: #f0f2f5;
+            font-weight: 600;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 6px 8px;
+            border: none;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .button-group button.active {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .button-group button.inactive {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            border: 1px solid #d5dce0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-buttons button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            flex: 1;
+        }
+
+        .action-buttons button:hover {
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        .saved-badge {
+            display: inline-block;
+            background-color: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .statistics-section {
+            margin: 12px 0;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e3e8;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .statistics-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: linear-gradient(to right, #f8fafb, #f0f2f5);
+            border-bottom: 1px solid #e0e3e8;
+        }
+
+        .statistics-header:hover {
+            background: linear-gradient(to right, #f0f0f0, #e8e8e8);
+        }
+
+        .statistics-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #34495e;
+        }
+
+        .collapse-arrow {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+            color: #34495e;
+        }
+
+        .collapse-arrow.collapsed {
+            transform: rotate(180deg);
+        }
+
+        .statistics-content {
+            padding: 12px;
+            max-height: 200px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .statistics-content.collapsed {
+            max-height: 0;
+            padding: 0;
+        }
+
+        .statistics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .statistics-table th,
+        .statistics-table td {
+            padding: 6px 8px;
+            text-align: center;
+            border: 1px solid #e0e3e8;
+        }
+
+        .statistics-table th {
+            background-color: #f5f5f5;
+            font-weight: 700;
+            color: #34495e;
+        }
+
+        .statistics-table td {
+            color: #2c3e50;
+        }
+
+        .statistics-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .stat-diff {
+            font-weight: 600;
+        }
+
+        .stat-diff.positive {
+            color: #27ae60;
+        }
+
+        .stat-diff.negative {
+            color: #d32f2f;
+        }
+
+        .table-section {
+            margin: 16px auto;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e3e8;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: linear-gradient(to right, #f8fafb, #f0f2f5);
+            border-bottom: 2px solid #e0e3e8;
+        }
+
+        th {
+            padding: 10px 6px;
+            text-align: center;
+            font-weight: 700;
+            color: #34495e;
+            white-space: nowrap;
+            font-size: 11px;
+        }
+
+        td {
+            padding: 8px 4px;
+            border-bottom: 1px solid #ecf0f1;
+            text-align: center;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tr.calendar-工作日 {
+            background-color: #e8f4fd;
+        }
+
+        tr.calendar-休息日 {
+            background-color: #d4edda;
+        }
+
+        tr.calendar-例假日 {
+            background-color: #ff8888;
+        }
+
+        tr.calendar-國定假日 {
+            background-color: #ffd4e5;
+        }
+
+        tr.calendar- {
+            background-color: white;
+        }
+
+        tr.error {
+            border: 2px solid #d32f2f;
+        }
+
+        .date-cell {
+            font-weight: 700;
+            color: #2c3e50;
+            min-width: 80px;
+            font-size: 12px;
+        }
+
+        .day-cell {
+            font-weight: 600;
+            color: #5a6c7d;
+            min-width: 35px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            min-width: 0;
+            padding: 4px 2px;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #d5dce0;
+            border-radius: 4px;
+            font-size: 12px;
+            background-color: white;
+            transition: all 0.2s ease;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #3498db;
+            background-color: #f9fbff;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+
+        .input-wrapper input:disabled {
+            background-color: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+            border-color: #ddd;
+        }
+
+        .input-wrapper.error input {
+            border-color: #d32f2f;
+            border-width: 2px;
+        }
+
+        .clear-btn {
+            padding: 4px 6px;
+            background-color: #e8e8e8;
+            border: 1px solid #d0d0d0;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #666;
+            margin-left: 2px;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background-color: #d0d0d0;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 2px;
+            right: 2px;
+            background: white;
+            border: 1px solid #d5dce0;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+
+        .suggestions.show {
+            display: block;
+        }
+
+        .suggestions div {
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f2f5;
+            transition: background-color 0.2s;
+        }
+
+        .suggestions div:hover {
+            background-color: #f0f0f0;
+        }
+
+        .suggestions div.add-option {
+            background: linear-gradient(to right, #e8f5e9, #f1f8e9);
+            font-weight: 600;
+            color: #2e7d32;
+            border-bottom: none;
+        }
+
+        .suggestions div.add-option:hover {
+            background: linear-gradient(to right, #c8e6c9, #dcedc8);
+        }
+
+        .action-cell {
+            min-width: 140px;
+            padding: 4px 2px;
+        }
+
+        .action-btn {
+            padding: 5px 6px;
+            border: 1px solid #d5dce0;
+            background-color: #f8fafb;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            margin: 2px;
+            font-weight: 600;
+            color: #34495e;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #ecf0f1;
+        }
+
+        .action-btn.success {
+            background: #27ae60;
+            color: white;
+            border-color: #27ae60;
+        }
+
+        .action-btn.clear {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+            padding: 5px 8px;
+        }
+
+        .error-message {
+            margin: 16px auto;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            border-left: 4px solid #d32f2f;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #b71c1c;
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.1);
+        }
+
+        .error-range {
+            margin: 8px 0;
+            padding: 6px 10px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #856404;
+            font-weight: 600;
+        }
+
+        .tips {
+            margin: 16px auto;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, #e8f4fd, #f0f8ff);
+            border-left: 4px solid #3498db;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #1565c0;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+        }
+
+        #clipboardHelper {
+            position: fixed;
+            top: -9999px;
+            opacity: 0;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-body {
+            font-size: 13px;
+            color: #2c3e50;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .modal-error-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            border-radius: 4px;
+            color: #856404;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .modal-footer button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-close-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .modal-close-btn:hover {
+            background: #c0392b;
+        }
+
+        .collapsible-section {
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .section-header {
+            padding: 8px;
+            background-color: #f5f5f5;
+            border: 1px solid #d5dce0;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #34495e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-header:hover {
+            background-color: #eee;
+        }
+
+        .section-arrow {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .section-arrow.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="clipboardHelper"></textarea>
+
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                ❌ 錯誤提示
+            </div>
+            <div class="modal-body" id="errorModalBody"></div>
+            <div class="modal-footer">
+                <button class="modal-close-btn" onclick="closeErrorModal()">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="container">
+            <div class="control-content">
+                <div class="control-section">
+                    <div class="action-buttons">
+                        <button onclick="saveData()">💾 儲存</button>
+                        <button onclick="exportExcel()">📊 匯出Excel</button>
+                        <span id="savedStatus"></span>
+                    </div>
+                </div>
+
+                <div class="collapsible-section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span class="section-arrow">▶</span>
+                        社員編號 / 月份 / 時間範圍
+                    </div>
+                    <div class="section-content">
+                        <div class="row" style="grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                            <div class="form-group">
+                                <label>社員編號</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="employeeId" placeholder="輸入編號搜尋" oninput="searchEmployee()" onfocus="showEmployeeSuggestions()">
+                                    <div class="suggestions" id="employeeSuggestions">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>月份選擇</label>
+                                <select id="monthSelect" onchange="loadTable()">
+                                    <option value="2026_7">2026年7月</option>
+                                    <option value="2026_8">2026年8月</option>
+                                    <option value="2026_9">2026年9月</option>
+                                    <option value="2026_10">2026年10月</option>
+                                    <option value="2026_11">2026年11月</option>
+                                    <option value="2026_12">2026年12月</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>月份範圍</label>
+                                <div class="button-group">
+                                    <button class="active" id="btn1" onclick="showRange(1)">上(1-15)</button>
+                                    <button class="inactive" id="btn2" onclick="showRange(2)">下(16-末)</button>
+                                    <button class="inactive" id="btn3" onclick="showRange(3)">整月</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="errorContainer"></div>
+
+    <div class="container">
+        <div class="statistics-section">
+            <div class="statistics-header" onclick="toggleStatistics()">
+                <div class="statistics-title" id="statsTitle">2026年7月 上半月 統計</div>
+                <div class="collapse-arrow" id="collapseArrow">▼</div>
+            </div>
+            <div class="statistics-content" id="statsContent">
+                <table class="statistics-table">
+                    <thead>
+                        <tr>
+                            <th>類型</th>
+                            <th>應排</th>
+                            <th>已排</th>
+                            <th>差異</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsBody">
+                        <tr><td>工作日</td><td id="s_工作日_app">-</td><td id="s_工作日_done">-</td><td id="s_工作日_diff">-</td></tr>
+                        <tr><td>休息日</td><td id="s_休息日_app">-</td><td id="s_休息日_done">-</td><td id="s_休息日_diff">-</td></tr>
+                        <tr><td>例假日</td><td id="s_例假日_app">-</td><td id="s_例假日_done">-</td><td id="s_例假日_diff">-</td></tr>
+                        <tr><td>國定假日</td><td id="s_國定假日_app">-</td><td id="s_國定假日_done">-</td><td id="s_國定假日_diff">-</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="table-section">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>星</th>
+                            <th>曆別</th>
+                            <th>班別</th>
+                            <th>地點</th>
+                            <th>機台</th>
+                            <th>內容</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        const shiftTimes = (() => {
+            const times = [];
+            for (let i = 0; i < 48; i++) {
+                const h = Math.floor(8 + i * 0.5);
+                const m = (i * 30) % 60;
+                const hour = h % 24;
+                times.push(`${String(hour).padStart(2, '0')}${String(m).padStart(2, '0')}`);
+            }
+            return times;
+        })();
+
+        const baseLocations = ['(台灣)台中', '(台灣)台南', '(台灣)高雄', '(海外)美國', '(海外)新加坡'];
+        const baseMachines = ['無', 'CT-Z', 'CT-V', 'CT-Q', 'CT-K', 'CT-N', 'CT-KK', 'CT-DC', 'CT-KSQ', 'CT-E'];
+        const baseOperations = ['待機', '移動/事務處理', '事務處理', '教育/研修', 'HOOK', 'Troubleshooting', '準備/書類/場勘', '會議', '清機', 'Process', 'HARD', '安全巡視'];
+        const calendarTypes = ['工作日', '休息日', '例假日', '國定假日'];
+
+        const employeeNames = {
+            'S0116': '林宗翰',
+            'S0186': '王詳閔',
+            'S0193': '許博壹'
+        };
+
+        let machines = [...baseMachines];
+        let operations = [...baseOperations];
+        let scheduleData = {};
+        let clipboard = null;
+        let currentRange = 1;
+        let currentMonth = '2026_7';
+        let statsCollapsed = false;
+        let errorDateRanges = [];
+
+        function loadStorage() {
+            const m = localStorage.getItem('machines');
+            const o = localStorage.getItem('operations');
+            if (m) machines = JSON.parse(m);
+            if (o) operations = JSON.parse(o);
+            
+            const data = localStorage.getItem('scheduleData');
+            if (data) scheduleData = JSON.parse(data);
+        }
+
+        function saveStorage() {
+            localStorage.setItem('machines', JSON.stringify(machines));
+            localStorage.setItem('operations', JSON.stringify(operations));
+        }
+
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('.section-arrow');
+            content.classList.toggle('collapsed');
+            arrow.classList.toggle('collapsed');
+        }
+
+        function saveData() {
+            const errors = validateData();
+            if (errors.length > 0) {
+                return;
+            }
+            
+            localStorage.setItem('scheduleData', JSON.stringify(scheduleData));
+            const status = document.getElementById('savedStatus');
+            status.innerHTML = '<span class="saved-badge">✓ 已儲存</span>';
+            setTimeout(() => {
+                status.innerHTML = '';
+            }, 2000);
+        }
+
+        function exportExcel() {
+            alert('匯出Excel功能開發中，請先確認要匯出的內容');
+        }
+
+        function searchEmployee() {
+            const input = document.getElementById('employeeId').value.toUpperCase();
+            const suggestions = document.getElementById('employeeSuggestions');
+            suggestions.innerHTML = '';
+            
+            if (input === '') {
+                suggestions.classList.remove('show');
+                return;
+            }
+            
+            const matches = Object.entries(employeeNames).filter(([id, name]) => 
+                id.includes(input)
+            );
+            
+            if (matches.length === 0) {
+                suggestions.classList.remove('show');
+                return;
+            }
+            
+            matches.forEach(([id, name]) => {
+                const div = document.createElement('div');
+                div.textContent = `${id} ${name}`;
+                div.onclick = () => selectEmployee(id, name);
+                suggestions.appendChild(div);
+            });
+            
+            suggestions.classList.add('show');
+        }
+
+        function showEmployeeSuggestions() {
+            const suggestions = document.getElementById('employeeSuggestions');
+            suggestions.innerHTML = '';
+            
+            Object.entries(employeeNames).forEach(([id, name]) => {
+                const div = document.createElement('div');
+                div.textContent = `${id} ${name}`;
+                div.onclick = () => selectEmployee(id, name);
+                suggestions.appendChild(div);
+            });
+            
+            suggestions.classList.add('show');
+        }
+
+        function selectEmployee(id, name) {
+            document.getElementById('employeeId').value = id;
+            document.getElementById('employeeSuggestions').classList.remove('show');
+        }
+
+
+        function toggleStatistics() {
+            statsCollapsed = !statsCollapsed;
+            const content = document.getElementById('statsContent');
+            const arrow = document.getElementById('collapseArrow');
+            
+            if (statsCollapsed) {
+                content.classList.add('collapsed');
+                arrow.classList.add('collapsed');
+            } else {
+                content.classList.remove('collapsed');
+                arrow.classList.remove('collapsed');
+            }
+        }
+
+        function showRange(n) {
+            currentRange = n;
+            document.getElementById('btn1').className = n === 1 ? 'active' : 'inactive';
+            document.getElementById('btn2').className = n === 2 ? 'active' : 'inactive';
+            document.getElementById('btn3').className = n === 3 ? 'active' : 'inactive';
+            loadTable();
+        }
+
+        function getDaysInMonth(y, m) {
+            return new Date(y, m, 0).getDate();
+        }
+
+        function getWeek(y, m, d) {
+            const weeks = ['日', '一', '二', '三', '四', '五', '六'];
+            return weeks[new Date(y, m - 1, d).getDay()];
+        }
+
+        function createInput(dateStr, field, value, disabled) {
+            if (disabled) return '<div style="color:#999;font-style:italic;">-</div>';
+
+            let opts = [];
+            if (field === 'calendarType') opts = calendarTypes;
+            else if (field === 'shift') opts = shiftTimes;
+            else if (field === 'location') opts = baseLocations;
+            else if (field === 'machine') opts = machines;
+            else if (field === 'operation') opts = operations;
+
+            const id = `${dateStr}_${field}`;
+            const hasClearBtn = field !== 'calendarType';
+            
+            let html = `<div class="input-wrapper">
+                <div class="input-container">
+                    <input type="text" id="${id}" value="${value}" 
+                        oninput="onInput('${id}', '${field}', '${dateStr}')"
+                        onfocus="onFocus('${id}', '${field}', '${dateStr}')">
+                    ${hasClearBtn ? `<button class="clear-btn" onclick="clearField('${id}', '${field}', '${dateStr}')">✕</button>` : ''}
+                </div>
+                <div class="suggestions" id="sug_${id}">`;
+
+            opts.forEach(o => {
+                html += `<div onclick="selectOpt('${id}', '${field}', '${dateStr}', '${o}')">${o}</div>`;
+            });
+
+            html += `</div></div>`;
+            return html;
+        }
+
+        function clearField(id, field, dateStr) {
+            const input = document.getElementById(id);
+            input.value = '';
+            if (!scheduleData[dateStr]) scheduleData[dateStr] = {};
+            delete scheduleData[dateStr][field];
+            
+            input.closest('.input-wrapper').classList.remove('error');
+            
+            const row = input.closest('tr');
+            if (row) {
+                row.classList.remove('error');
+                row.querySelectorAll('.input-wrapper').forEach(w => {
+                    w.classList.remove('error');
+                });
+            }
+        }
+
+        function onInput(id, field, dateStr) {
+            const input = document.getElementById(id);
+            const val = input.value.toLowerCase();
+            const sug = document.getElementById('sug_' + id);
+            const wrapper = input.closest('.input-wrapper');
+
+            if (field === 'calendarType') {
+                const current = scheduleData[dateStr]?.calendarType || '';
+                if (val !== current.toLowerCase() && current) {
+                    input.value = current;
+                    return;
+                }
+            }
+
+            let opts = [];
+            if (field === 'calendarType') opts = calendarTypes;
+            else if (field === 'shift') opts = shiftTimes;
+            else if (field === 'location') opts = baseLocations;
+            else if (field === 'machine') opts = machines;
+            else if (field === 'operation') opts = operations;
+
+            const divs = sug.querySelectorAll('div');
+            divs.forEach(d => {
+                const t = d.textContent.toLowerCase();
+                d.style.display = t.includes(val) || val === '' ? 'block' : 'none';
+            });
+
+            const old = sug.querySelector('.add-option');
+            if (old) old.remove();
+
+            if (val !== '') {
+                const hasMatch = Array.from(divs).some(d => d.style.display !== 'none');
+                if (!hasMatch && (field === 'machine' || field === 'operation')) {
+                    const add = document.createElement('div');
+                    add.className = 'add-option';
+                    add.textContent = `+ 新增 "${input.value}"`;
+                    add.onclick = e => {
+                        e.stopPropagation();
+                        const v = input.value.trim();
+                        if (field === 'machine' && !machines.includes(v)) {
+                            machines.push(v);
+                            machines.sort();
+                            saveStorage();
+                        } else if (field === 'operation' && !operations.includes(v)) {
+                            operations.push(v);
+                            operations.sort();
+                            saveStorage();
+                        }
+                        selectOpt(id, field, dateStr, v);
+                    };
+                    sug.appendChild(add);
+                }
+            }
+
+            wrapper.classList.remove('error');
+        }
+
+        function onFocus(id, field, dateStr) {
+            const sug = document.getElementById('sug_' + id);
+            sug.classList.add('show');
+        }
+
+        function selectOpt(id, field, dateStr, val) {
+            const input = document.getElementById(id);
+            input.value = val;
+            if (!scheduleData[dateStr]) scheduleData[dateStr] = {};
+            
+            if (val.trim() === '') {
+                delete scheduleData[dateStr][field];
+            } else {
+                scheduleData[dateStr][field] = val;
+            }
+            
+            document.getElementById('sug_' + id).classList.remove('show');
+            
+            if (field === 'calendarType') {
+                // 如果改成例假日，清空其他4個欄位
+                if (val === '例假日') {
+                    delete scheduleData[dateStr].shift;
+                    delete scheduleData[dateStr].location;
+                    delete scheduleData[dateStr].machine;
+                    delete scheduleData[dateStr].operation;
+                }
+                loadTable();
+            }
+        }
+
+        function isRowEmpty(dateStr) {
+            const data = scheduleData[dateStr];
+            return !data || (!data.calendarType && !data.shift && !data.location && !data.machine && !data.operation);
+        }
+
+        function dateToString(y, m, d) {
+            return `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+        }
+
+        function validateData() {
+            const errors = [];
+            errorDateRanges = [];
+            const [year, month] = currentMonth.split('_');
+            const y = parseInt(year);
+            const m = parseInt(month);
+            const days = getDaysInMonth(y, m);
+
+            let start, end;
+            if (currentRange === 1) {
+                start = 1;
+                end = 15;
+            } else if (currentRange === 2) {
+                start = 16;
+                end = days;
+            } else {
+                start = 1;
+                end = days;
+            }
+
+            // 檢查資料完整性
+            for (let d = start; d <= end; d++) {
+                const dateStr = dateToString(y, m, d);
+                const data = scheduleData[dateStr];
+                
+                if (isRowEmpty(dateStr)) continue;
+
+                if (data && data.calendarType) {
+                    if (data.calendarType === '工作日') {
+                        if (!data.shift || !data.location || !data.machine || !data.operation) {
+                            errors.push(`${dateStr} 資料不完整`);
+                        }
+                    }
+                    else if (data.calendarType === '休息日' || data.calendarType === '國定假日') {
+                        const filledCount = (data.shift ? 1 : 0) + (data.location ? 1 : 0) + (data.machine ? 1 : 0) + (data.operation ? 1 : 0);
+                        if (filledCount > 0 && filledCount < 4) {
+                            errors.push(`${dateStr} 資料不完整`);
+                        }
+                    }
+                }
+            }
+
+            // 檢查7天規則（根據currentRange決定檢查範圍）
+            const allDates = [];
+            
+            // 只在整月模式下才檢查前月最後7天
+            if (currentRange === 3 && m > 1) {
+                const prevM = m - 1;
+                const prevDays = getDaysInMonth(y, prevM);
+                for (let d = Math.max(1, prevDays - 6); d <= prevDays; d++) {
+                    const dateStr = dateToString(y, prevM, d);
+                    if (!isRowEmpty(dateStr)) {
+                        const calType = scheduleData[dateStr]?.calendarType || '';
+                        if (calType) {
+                            allDates.push({ y, m: prevM, d, type: calType });
+                        }
+                    }
+                }
+            }
+
+            // 該月全部或指定範圍
+            const checkStart = currentRange === 3 ? 1 : start;
+            const checkEnd = currentRange === 3 ? days : end;
+            for (let d = checkStart; d <= checkEnd; d++) {
+                const dateStr = dateToString(y, m, d);
+                if (!isRowEmpty(dateStr)) {
+                    const calType = scheduleData[dateStr]?.calendarType || '';
+                    if (calType) {
+                        allDates.push({ y, m, d, type: calType });
+                    }
+                }
+            }
+
+            // 只在整月模式下才檢查下月前7天
+            if (currentRange === 3 && m < 12) {
+                const nextM = m + 1;
+                for (let d = 1; d <= 7; d++) {
+                    const dateStr = dateToString(y, nextM, d);
+                    if (!isRowEmpty(dateStr)) {
+                        const calType = scheduleData[dateStr]?.calendarType || '';
+                        if (calType) {
+                            allDates.push({ y, m: nextM, d, type: calType });
+                        }
+                    }
+                }
+            }
+
+            // 檢查日曆上的每個連續7天區間是否都有排班且有例假日
+            const checkStart2 = currentRange === 3 ? 1 : start;
+            const checkEnd2 = currentRange === 3 ? days : end;
+            
+            // 計算最早需要檢查的日期（向回推6天，可能在前月）
+            let startCheckDay = checkStart2 - 6;
+            let startCheckMonth = m;
+            let startCheckYear = y;
+            
+            if (startCheckDay <= 0 && m > 1) {
+                startCheckMonth = m - 1;
+                const prevDays = getDaysInMonth(y, m - 1);
+                startCheckDay = prevDays + startCheckDay;
+            } else if (startCheckDay <= 0) {
+                startCheckDay = 1;
+            }
+            
+            // 從可能的最早日期開始檢查所有7天區間
+            let currentD = startCheckDay;
+            let currentM = startCheckMonth;
+            let currentY = startCheckYear;
+            
+            while (true) {
+                let sevenDaysData = [];
+                let allSevenDaysHaveData = true;
+                
+                // 檢查連續7天
+                for (let offset = 0; offset < 7; offset++) {
+                    let checkDay = currentD + offset;
+                    let checkMonth = currentM;
+                    let checkYear = currentY;
+                    const daysInMonth = getDaysInMonth(checkYear, checkMonth);
+                    
+                    // 處理跨月份
+                    while (checkDay > daysInMonth) {
+                        checkDay -= daysInMonth;
+                        checkMonth++;
+                        if (checkMonth > 12) {
+                            checkMonth = 1;
+                            checkYear++;
+                        }
+                    }
+                    
+                    const dateStr = dateToString(checkYear, checkMonth, checkDay);
+                    const isEmpty = isRowEmpty(dateStr);
+                    const calType = scheduleData[dateStr]?.calendarType || '';
+                    
+                    if (!isEmpty) {
+                        sevenDaysData.push({ y: checkYear, m: checkMonth, d: checkDay, type: calType });
+                    } else {
+                        allSevenDaysHaveData = false;
+                    }
+                }
+                
+                // 只有當這7天都有排班資料時，才檢查是否有例假日
+                if (allSevenDaysHaveData && sevenDaysData.length === 7) {
+                    const hasHoliday = sevenDaysData.some(day => day.type === '例假日');
+                    if (!hasHoliday) {
+                        const firstDay = sevenDaysData[0];
+                        const lastDay = sevenDaysData[6];
+                        const startStr = `${firstDay.m}/${firstDay.d}`;
+                        const endStr = `${lastDay.m}/${lastDay.d}`;
+                        
+                        // 避免重複報告
+                        const isDuplicate = errors.some(e => e === `${startStr}-${endStr} 每7天需排一天例假日`);
+                        if (!isDuplicate) {
+                            errors.push(`${startStr}-${endStr} 每7天需排一天例假日`);
+                            errorDateRanges.push({ start: firstDay, end: lastDay });
+                        }
+                    }
+                }
+                
+                // 移動到下一天
+                currentD++;
+                const currentDaysInMonth = getDaysInMonth(currentY, currentM);
+                if (currentD > currentDaysInMonth) {
+                    currentD = 1;
+                    currentM++;
+                    if (currentM > 12) {
+                        currentM = 1;
+                        currentY++;
+                    }
+                }
+                
+                // 檢查是否已經超過checkEnd2
+                if (currentM === m && currentD > checkEnd2) {
+                    break;
+                }
+                // 檢查是否進入下一個月份很遠的地方（避免無限迴圈）
+                if (currentM > m || (currentM === m && currentY > y)) {
+                    break;
+                }
+            }
+
+            showErrors(errors);
+            return errors;
+        }
+
+        function showErrors(errors) {
+            const container = document.getElementById('errorContainer');
+            container.innerHTML = '';
+            
+            if (errors.length > 0) {
+                // 顯示模態對話框
+                const errorModalBody = document.getElementById('errorModalBody');
+                errorModalBody.innerHTML = '';
+                
+                errors.forEach(err => {
+                    const errorItem = document.createElement('div');
+                    errorItem.className = 'modal-error-item';
+                    errorItem.textContent = err;
+                    errorModalBody.appendChild(errorItem);
+                });
+                
+                document.getElementById('errorModal').classList.add('show');
+
+                // 標記表格中的錯誤行
+                document.querySelectorAll('tbody tr').forEach(row => {
+                    row.classList.remove('error');
+                });
+                
+                // 標記7天區間的錯誤（只標記非空班且在錯誤區間內的行）
+                errorDateRanges.forEach(range => {
+                    document.querySelectorAll('tbody tr').forEach(row => {
+                        const dateMatch = row.querySelector('.date-cell');
+                        if (dateMatch) {
+                            const dateText = dateMatch.textContent;
+                            const dateStr = dateText.trim();
+                            if (!isRowEmpty(dateStr) && isDateInRange(dateText, range)) {
+                                row.classList.add('error');
+                            }
+                        }
+                    });
+                });
+
+                // 標記資料不完整的行
+                errors.forEach(err => {
+                    const match = err.match(/(\d+\/\d+\/\d+)/);
+                    if (match && !err.includes('每7天')) {
+                        document.querySelectorAll('tbody tr').forEach(row => {
+                            if (row.textContent.includes(match[1])) {
+                                row.classList.add('error');
+                                row.querySelectorAll('.input-wrapper').forEach(w => {
+                                    const input = w.querySelector('input');
+                                    if (input && !input.value) {
+                                        w.classList.add('error');
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            } else {
+                // 沒有錯誤，關閉模態
+                document.getElementById('errorModal').classList.remove('show');
+            }
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.remove('show');
+        }
+
+        function isDateInRange(rowText, range) {
+            const match = rowText.match(/(\d+)\/(\d+)\/(\d+)/);
+            if (!match) return false;
+            const y = parseInt(match[1]);
+            const m = parseInt(match[2]);
+            const d = parseInt(match[3]);
+            
+            const startDate = new Date(range.start.y, range.start.m - 1, range.start.d);
+            const endDate = new Date(range.end.y, range.end.m - 1, range.end.d);
+            const currentDate = new Date(y, m - 1, d);
+            return currentDate >= startDate && currentDate <= endDate;
+        }
+
+        function updateStatistics() {
+            const [year, month] = currentMonth.split('_');
+            const y = parseInt(year);
+            const m = parseInt(month);
+            const days = getDaysInMonth(y, m);
+
+            let start, end, rangeText;
+            if (currentRange === 1) {
+                start = 1;
+                end = 15;
+                rangeText = '上半月';
+            } else if (currentRange === 2) {
+                start = 16;
+                end = days;
+                rangeText = '下半月';
+            } else {
+                start = 1;
+                end = days;
+                rangeText = '整月';
+            }
+
+            document.getElementById('statsTitle').textContent = `${year}年${month}月 ${rangeText} 統計`;
+
+            let saturdays = 0, sundays = 0;
+            for (let d = start; d <= end; d++) {
+                const dayOfWeek = new Date(y, m - 1, d).getDay();
+                if (dayOfWeek === 6) saturdays++;
+                else if (dayOfWeek === 0) sundays++;
+            }
+
+            const totalDays = end - start + 1;
+            const workdays = totalDays - (saturdays + sundays);
+
+            const stats = {
+                '工作日': { planned: workdays, done: 0 },
+                '休息日': { planned: saturdays, done: 0 },
+                '例假日': { planned: sundays, done: 0 },
+                '國定假日': { planned: 0, done: 0 }
+            };
+
+            for (let d = start; d <= end; d++) {
+                const dateStr = dateToString(y, m, d);
+                const actualType = scheduleData[dateStr]?.calendarType;
+                
+                if (actualType && actualType in stats) {
+                    if (!isRowEmpty(dateStr)) {
+                        stats[actualType].done++;
+                    }
+                }
+            }
+
+            Object.keys(stats).forEach(type => {
+                const planned = stats[type].planned;
+                const done = stats[type].done;
+                const diff = done - planned;
+                
+                document.getElementById(`s_${type}_app`).textContent = planned;
+                document.getElementById(`s_${type}_done`).textContent = done;
+                
+                const diffEl = document.getElementById(`s_${type}_diff`);
+                diffEl.textContent = (diff >= 0 ? '+' : '') + diff;
+                diffEl.className = 'stat-diff ' + (diff >= 0 ? 'positive' : 'negative');
+            });
+        }
+
+        function clearRow(dateStr) {
+            if (scheduleData[dateStr]) {
+                delete scheduleData[dateStr].calendarType;
+                delete scheduleData[dateStr].shift;
+                delete scheduleData[dateStr].location;
+                delete scheduleData[dateStr].machine;
+                delete scheduleData[dateStr].operation;
+            }
+            loadTable();
+        }
+
+        function loadTable() {
+            currentMonth = document.getElementById('monthSelect').value;
+            const [year, month] = currentMonth.split('_');
+            const y = parseInt(year);
+            const m = parseInt(month);
+            const days = getDaysInMonth(y, m);
+
+            let start, end;
+            if (currentRange === 1) {
+                start = 1;
+                end = 15;
+            } else if (currentRange === 2) {
+                start = 16;
+                end = days;
+            } else {
+                start = 1;
+                end = days;
+            }
+
+            let html = '';
+            for (let d = start; d <= end; d++) {
+                const dateStr = dateToString(y, m, d);
+                const week = getWeek(y, m, d);
+                const calType = scheduleData[dateStr]?.calendarType || '';
+                const isHoliday = calType === '例假日';
+
+                const shift = scheduleData[dateStr]?.shift || '';
+                const loc = scheduleData[dateStr]?.location || '';
+                const mach = scheduleData[dateStr]?.machine || '';
+                const oper = scheduleData[dateStr]?.operation || '';
+
+                const actionBtns = `
+                    <button class="action-btn" onclick="copy('${dateStr}')">複製</button>
+                    <button class="action-btn" onclick="paste('${dateStr}')">貼上</button>
+                    <button class="action-btn clear" onclick="clearRow('${dateStr}')">✕</button>
+                `;
+
+                html += `<tr class="calendar-${calType}">
+                    <td class="date-cell">${dateStr}</td>
+                    <td class="day-cell">${week}</td>
+                    <td class="input-wrapper" style="padding:4px 2px;">${createInput(dateStr, 'calendarType', calType, false)}</td>
+                    <td class="input-wrapper" style="padding:4px 2px;">${createInput(dateStr, 'shift', shift, isHoliday && !shift)}</td>
+                    <td class="input-wrapper" style="min-width:110px;padding:4px 2px;">${createInput(dateStr, 'location', loc, isHoliday && !loc)}</td>
+                    <td class="input-wrapper" style="padding:4px 2px;">${createInput(dateStr, 'machine', mach, isHoliday && !mach)}</td>
+                    <td class="input-wrapper" style="min-width:130px;padding:4px 2px;">${createInput(dateStr, 'operation', oper, isHoliday && !oper)}</td>
+                    <td class="action-cell">${actionBtns}</td>
+                </tr>`;
+            }
+            document.getElementById('tbody').innerHTML = html;
+            document.querySelectorAll('.suggestions').forEach(s => s.classList.remove('show'));
+            document.getElementById('errorContainer').innerHTML = '';
+            updateStatistics();
+        }
+
+        function copy(dateStr) {
+            const data = scheduleData[dateStr];
+            if (!data || !data.calendarType) return alert('請先選擇行事曆別');
+            
+            clipboard = `${data.calendarType}.${data.shift || ''}.${data.location || ''}.${data.machine || ''}.${data.operation || ''}`;
+            
+            const helper = document.getElementById('clipboardHelper');
+            helper.value = clipboard;
+            helper.select();
+            
+            try {
+                document.execCommand('copy');
+                const btn = event.target;
+                btn.textContent = '已複製';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = '複製';
+                    btn.classList.remove('success');
+                }, 1500);
+            } catch (e) {
+                alert('複製失敗');
+            }
+        }
+
+        function paste(dateStr) {
+            if (!clipboard) return alert('請先複製資料');
+            
+            const parts = clipboard.split('.');
+            if (parts.length !== 5) return alert('格式錯誤');
+
+            if (!scheduleData[dateStr]) scheduleData[dateStr] = {};
+            scheduleData[dateStr].calendarType = parts[0].trim();
+            scheduleData[dateStr].shift = parts[1].trim();
+            scheduleData[dateStr].location = parts[2].trim();
+            scheduleData[dateStr].machine = parts[3].trim();
+            scheduleData[dateStr].operation = parts[4].trim();
+            
+            loadTable();
+            
+            const btn = event.target;
+            btn.textContent = '已貼上';
+            btn.classList.add('success');
+            setTimeout(() => {
+                btn.textContent = '貼上';
+                btn.classList.remove('success');
+            }, 1500);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStorage();
+            // 設定預設員工編號
+            document.getElementById('employeeId').value = 'S0116';
+            loadTable();
+            
+            document.addEventListener('click', e => {
+                if (!e.target.closest('.input-wrapper')) {
+                    document.querySelectorAll('.suggestions').forEach(s => s.classList.remove('show'));
+                }
+                
+                // 點擊模態背景時關閉
+                const modal = document.getElementById('errorModal');
+                if (e.target === modal) {
+                    closeErrorModal();
+                }
+            });
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.suggestions').forEach(s => s.classList.remove('show'));
+                document.getElementById('employeeSuggestions')?.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
