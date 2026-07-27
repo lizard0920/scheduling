@@ -59,6 +59,7 @@
         .form-group {
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .form-group label {
@@ -258,6 +259,77 @@
         .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            padding: 12px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e0e3e8;
+        }
+
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e0e3e8;
+            margin-bottom: 1px;
+        }
+
+        .weekday-header {
+            background: linear-gradient(to right, #f8fafb, #f0f2f5);
+            padding: 10px 6px;
+            text-align: center;
+            font-weight: 700;
+            color: #34495e;
+            font-size: 12px;
+            border-bottom: 2px solid #e0e3e8;
+        }
+
+        .calendar-day {
+            min-height: 140px;
+            padding: 8px 4px;
+            background-color: white;
+            position: relative;
+            overflow-y: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        .calendar-day.calendar-工作日 {
+            background-color: #e8f4fd;
+        }
+
+        .calendar-day.calendar-休息日 {
+            background-color: #d4edda;
+        }
+
+        .calendar-day.calendar-例假日 {
+            background-color: #ff8888;
+        }
+
+        .calendar-day.calendar-國定假日 {
+            background-color: #ffd4e5;
+        }
+
+        .calendar-day.other-month {
+            background-color: #f5f5f5;
+            opacity: 0.6;
+        }
+
+        .calendar-day.error {
+            border: 2px solid #d32f2f;
+        }
+
+        .day-header {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .day-content {
+            font-size: 11px;
         }
 
         table {
@@ -387,13 +459,13 @@
         .suggestions {
             position: absolute;
             top: 100%;
-            left: 2px;
-            right: 2px;
+            left: 0;
+            right: 0;
             background: white;
             border: 1px solid #d5dce0;
             border-top: none;
             border-radius: 0 0 4px 4px;
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
             z-index: 1000;
             display: none;
@@ -405,9 +477,9 @@
         }
 
         .suggestions div {
-            padding: 6px 10px;
+            padding: 8px 10px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 13px;
             border-bottom: 1px solid #f0f2f5;
             transition: background-color 0.2s;
         }
@@ -416,15 +488,28 @@
             background-color: #f0f0f0;
         }
 
-        .suggestions div.add-option {
-            background: linear-gradient(to right, #e8f5e9, #f1f8e9);
-            font-weight: 600;
-            color: #2e7d32;
-            border-bottom: none;
+        .control-panel .form-group .input-wrapper {
+            position: relative;
         }
 
-        .suggestions div.add-option:hover {
-            background: linear-gradient(to right, #c8e6c9, #dcedc8);
+        .control-panel .form-group input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d5dce0;
+            border-radius: 5px;
+            font-size: 13px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        .control-panel .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .control-panel .suggestions {
+            max-height: 300px;
         }
 
         .action-cell {
@@ -731,25 +816,10 @@
     <div class="container">
         <div class="table-section">
             <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>日期</th>
-                            <th>星</th>
-                            <th>曆別</th>
-                            <th>班別</th>
-                            <th>地點</th>
-                            <th>機台</th>
-                            <th>內容</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody"></tbody>
-                </table>
+                <div class="calendar-header" id="calendarHeader"></div>
+                <div class="calendar-grid" id="calendarGrid"></div>
             </div>
         </div>
-
-
     </div>
 
     <script>
@@ -829,18 +899,15 @@
             const suggestions = document.getElementById('employeeSuggestions');
             suggestions.innerHTML = '';
             
+            let matches;
             if (input === '') {
-                suggestions.classList.remove('show');
-                return;
-            }
-            
-            const matches = Object.entries(employeeNames).filter(([id, name]) => 
-                id.includes(input)
-            );
-            
-            if (matches.length === 0) {
-                suggestions.classList.remove('show');
-                return;
+                // 沒有輸入時顯示全部
+                matches = Object.entries(employeeNames);
+            } else {
+                // 輸入時過濾（編號包含輸入內容）
+                matches = Object.entries(employeeNames).filter(([id, name]) => 
+                    id.includes(input)
+                );
             }
             
             matches.forEach(([id, name]) => {
@@ -850,7 +917,11 @@
                 suggestions.appendChild(div);
             });
             
-            suggestions.classList.add('show');
+            if (matches.length > 0) {
+                suggestions.classList.add('show');
+            } else {
+                suggestions.classList.remove('show');
+            }
         }
 
         function showEmployeeSuggestions() {
@@ -1392,22 +1463,33 @@
             const m = parseInt(month);
             const days = getDaysInMonth(y, m);
 
-            let start, end;
-            if (currentRange === 1) {
-                start = 1;
-                end = 15;
-            } else if (currentRange === 2) {
-                start = 16;
-                end = days;
-            } else {
-                start = 1;
-                end = days;
+            // 生成日历头部（星期）
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+            let headerHtml = '';
+            weekDays.forEach(day => {
+                headerHtml += `<div class="weekday-header">${day}</div>`;
+            });
+            document.getElementById('calendarHeader').innerHTML = headerHtml;
+
+            // 计算第一天是星期几
+            const firstDay = new Date(y, m - 1, 1).getDay();
+            const gridHtml = [];
+            
+            // 添加前一个月的日期（灰色显示）
+            const prevMonthDays = getDaysInMonth(y, m === 1 ? y - 1 : y, m === 1 ? 12 : m - 1);
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const prevD = prevMonthDays - i;
+                const prevM = m === 1 ? 12 : m - 1;
+                const prevY = m === 1 ? y - 1 : y;
+                const dateStr = dateToString(prevY, prevM, prevD);
+                gridHtml.push(`<div class="calendar-day other-month">
+                    <div class="day-header">${prevD}</div>
+                </div>`);
             }
 
-            let html = '';
-            for (let d = start; d <= end; d++) {
+            // 添加当前月的日期
+            for (let d = 1; d <= days; d++) {
                 const dateStr = dateToString(y, m, d);
-                const week = getWeek(y, m, d);
                 const calType = scheduleData[dateStr]?.calendarType || '';
                 const isHoliday = calType === '例假日';
 
@@ -1422,18 +1504,33 @@
                     <button class="action-btn clear" onclick="clearRow('${dateStr}')">✕</button>
                 `;
 
-                html += `<tr class="calendar-${calType}">
-                    <td class="date-cell">${dateStr}</td>
-                    <td class="day-cell">${week}</td>
-                    <td class="input-wrapper" style="padding:4px 2px;">${createInput(dateStr, 'calendarType', calType, false)}</td>
-                    <td class="input-wrapper" style="padding:4px 2px;">${createInput(dateStr, 'shift', shift, isHoliday && !shift)}</td>
-                    <td class="input-wrapper" style="min-width:110px;padding:4px 2px;">${createInput(dateStr, 'location', loc, isHoliday && !loc)}</td>
-                    <td class="input-wrapper" style="padding:4px 2px;">${createInput(dateStr, 'machine', mach, isHoliday && !mach)}</td>
-                    <td class="input-wrapper" style="min-width:130px;padding:4px 2px;">${createInput(dateStr, 'operation', oper, isHoliday && !oper)}</td>
-                    <td class="action-cell">${actionBtns}</td>
-                </tr>`;
+                const dayContent = `
+                    <div class="day-header">${d}</div>
+                    <div class="day-content">
+                        <div style="margin-bottom: 4px;">${createInput(dateStr, 'calendarType', calType, false)}</div>
+                        <div style="margin-bottom: 2px;">${createInput(dateStr, 'shift', shift, isHoliday && !shift)}</div>
+                        <div style="margin-bottom: 2px;">${createInput(dateStr, 'location', loc, isHoliday && !loc)}</div>
+                        <div style="margin-bottom: 2px;">${createInput(dateStr, 'machine', mach, isHoliday && !mach)}</div>
+                        <div style="margin-bottom: 4px;">${createInput(dateStr, 'operation', oper, isHoliday && !oper)}</div>
+                        <div class="action-cell" style="display: flex; gap: 2px; justify-content: center;">
+                            ${actionBtns}
+                        </div>
+                    </div>
+                `;
+
+                gridHtml.push(`<div class="calendar-day calendar-${calType}">${dayContent}</div>`);
             }
-            document.getElementById('tbody').innerHTML = html;
+
+            // 添加下一个月的日期（灰色显示）
+            const totalCells = gridHtml.length;
+            const remainingCells = (7 - (totalCells % 7)) % 7;
+            for (let i = 1; i <= remainingCells; i++) {
+                gridHtml.push(`<div class="calendar-day other-month">
+                    <div class="day-header">${i}</div>
+                </div>`);
+            }
+
+            document.getElementById('calendarGrid').innerHTML = gridHtml.join('');
             document.querySelectorAll('.suggestions').forEach(s => s.classList.remove('show'));
             document.getElementById('errorContainer').innerHTML = '';
             updateStatistics();
@@ -1491,11 +1588,26 @@
             loadStorage();
             // 設定預設員工編號
             document.getElementById('employeeId').value = 'S0116';
+            
+            // 確保DOM完全加載後再顯示下拉菜單
+            setTimeout(() => {
+                showEmployeeSuggestions();
+            }, 100);
+            
             loadTable();
             
             document.addEventListener('click', e => {
-                if (!e.target.closest('.input-wrapper')) {
-                    document.querySelectorAll('.suggestions').forEach(s => s.classList.remove('show'));
+                const employeeSuggestions = document.getElementById('employeeSuggestions');
+                const employeeInput = document.getElementById('employeeId');
+                
+                // 如果點擊的不是input或suggestions，就隱藏suggestions
+                if (employeeInput && employeeSuggestions && !employeeInput.contains(e.target) && !employeeSuggestions.contains(e.target)) {
+                    employeeSuggestions.classList.remove('show');
+                }
+                
+                // 點擊表格中的input-wrapper時也要隱藏suggestions
+                if (!e.target.closest('.form-group .input-wrapper')) {
+                    document.querySelectorAll('table .suggestions').forEach(s => s.classList.remove('show'));
                 }
                 
                 // 點擊模態背景時關閉
