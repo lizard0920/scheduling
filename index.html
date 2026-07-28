@@ -189,14 +189,14 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
 
         .calendar-tag {
             display: inline-block;
-            padding: 2px 6px;
+            padding: 3px 8px;
             border-radius: 12px;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 600;
             color: white;
             white-space: nowrap;
@@ -294,66 +294,37 @@
         }
 
         .edit-field label {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
             color: #34495e;
         }
 
-        .edit-field-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d5dce0;
-            border-radius: 6px;
+        .edit-field-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .edit-tag-option {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 20px;
             font-size: 13px;
+            font-weight: 600;
+            color: white;
             cursor: pointer;
-            background: white;
+            border: 2px solid transparent;
             transition: all 0.2s;
         }
 
-        .edit-field-input:hover {
-            border-color: #3498db;
+        .edit-tag-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        .edit-field-input.has-value {
-            background: #f0f8ff;
-            border-color: #1abc9c;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
-        .edit-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #d5dce0;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 101;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .edit-dropdown.show {
-            display: block;
-        }
-
-        .edit-dropdown-item {
-            padding: 10px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 13px;
-            transition: background-color 0.2s;
-        }
-
-        .edit-dropdown-item:last-child {
-            border-bottom: none;
-        }
-
-        .edit-dropdown-item:hover {
-            background-color: #f5f5f5;
+        .edit-tag-option.selected {
+            border-color: #333;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
         }
 
         .edit-actions {
@@ -457,21 +428,21 @@
             }
 
             .calendar-grid {
-                gap: 6px;
+                gap: 4px;
             }
 
             .calendar-day {
-                padding: 6px;
-                font-size: 12px;
+                padding: 4px;
             }
 
             .calendar-day-number {
-                font-size: 12px;
+                font-size: 13px;
+                margin-bottom: 3px;
             }
 
             .calendar-tag {
-                font-size: 8px;
-                padding: 1px 4px;
+                font-size: 11px;
+                padding: 4px 8px;
             }
 
             .edit-panel {
@@ -480,6 +451,44 @@
 
             .calendar-title {
                 font-size: 16px;
+            }
+
+            .edit-tag-option {
+                font-size: 12px;
+                padding: 7px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 4px;
+            }
+
+            .calendar-grid {
+                gap: 3px;
+            }
+
+            .calendar-day {
+                padding: 3px;
+            }
+
+            .calendar-day-number {
+                font-size: 12px;
+                margin-bottom: 2px;
+            }
+
+            .calendar-tag {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+
+            .calendar-day-content {
+                gap: 2px;
+            }
+
+            .edit-tag-option {
+                font-size: 11px;
+                padding: 6px 10px;
             }
         }
     </style>
@@ -544,38 +553,23 @@
             <div class="edit-content">
                 <div class="edit-field">
                     <label>行事曆別</label>
-                    <div style="position: relative;">
-                        <div class="edit-field-input" id="editCalendarType" onclick="toggleDropdown('calendarType')"></div>
-                        <div class="edit-dropdown" id="dropdown_calendarType"></div>
-                    </div>
+                    <div class="edit-field-options" id="options_calendarType"></div>
                 </div>
                 <div class="edit-field" id="shiftField" style="display:none;">
                     <label>班別</label>
-                    <div style="position: relative;">
-                        <div class="edit-field-input" id="editShift" onclick="toggleDropdown('shift')"></div>
-                        <div class="edit-dropdown" id="dropdown_shift"></div>
-                    </div>
+                    <div class="edit-field-options" id="options_shift" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
                 <div class="edit-field" id="locationField" style="display:none;">
                     <label>地點</label>
-                    <div style="position: relative;">
-                        <div class="edit-field-input" id="editLocation" onclick="toggleDropdown('location')"></div>
-                        <div class="edit-dropdown" id="dropdown_location"></div>
-                    </div>
+                    <div class="edit-field-options" id="options_location"></div>
                 </div>
                 <div class="edit-field" id="machineField" style="display:none;">
                     <label>機台</label>
-                    <div style="position: relative;">
-                        <div class="edit-field-input" id="editMachine" onclick="toggleDropdown('machine')"></div>
-                        <div class="edit-dropdown" id="dropdown_machine"></div>
-                    </div>
+                    <div class="edit-field-options" id="options_machine" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
                 <div class="edit-field" id="operationField" style="display:none;">
                     <label>內容</label>
-                    <div style="position: relative;">
-                        <div class="edit-field-input" id="editOperation" onclick="toggleDropdown('operation')"></div>
-                        <div class="edit-dropdown" id="dropdown_operation"></div>
-                    </div>
+                    <div class="edit-field-options" id="options_operation" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
             </div>
             <div class="edit-actions">
@@ -641,7 +635,43 @@
 
         // 社員編號下拉菜單
         function setupEmployeeDropdown() {
-            // TODO: 實現社員編號下拉菜單
+            const input = document.getElementById('employeeId');
+            const suggestions = document.createElement('div');
+            suggestions.className = 'employee-dropdown';
+            suggestions.id = 'employeeSuggestions';
+            suggestions.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #d5dce0;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;max-height:200px;overflow-y:auto;display:none;';
+            
+            ROSTER.forEach(r => {
+                const item = document.createElement('div');
+                item.style.cssText = 'padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;';
+                item.textContent = `${r.code} ${r.name}`;
+                item.onclick = () => {
+                    input.value = `${r.code} ${r.name}`;
+                    suggestions.style.display = 'none';
+                };
+                suggestions.appendChild(item);
+            });
+
+            input.parentElement.style.position = 'relative';
+            input.parentElement.appendChild(suggestions);
+
+            input.addEventListener('focus', () => {
+                suggestions.style.display = 'block';
+            });
+
+            input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    suggestions.style.display = 'none';
+                }, 200);
+            });
+
+            input.addEventListener('input', (e) => {
+                const val = e.target.value.toUpperCase();
+                suggestions.querySelectorAll('div').forEach(item => {
+                    item.style.display = item.textContent.toUpperCase().includes(val) ? 'block' : 'none';
+                });
+                suggestions.style.display = 'block';
+            });
         }
 
         // 加載日曆
@@ -724,31 +754,47 @@
                 
                 if (data.calendarType) {
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag calendar-tag-calendar';
+                    tag.className = 'calendar-tag';
                     tag.textContent = data.calendarType;
+                    
+                    // 根據行事曆別值設置顏色
+                    if (data.calendarType === '工作日') {
+                        tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
+                    } else if (data.calendarType === '休息日') {
+                        tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
+                    } else if (data.calendarType === '例假日') {
+                        tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
+                    } else if (data.calendarType === '國定假日') {
+                        tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
+                    }
+                    
                     content.appendChild(tag);
                 }
                 if (data.shift) {
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag calendar-tag-shift';
+                    tag.className = 'calendar-tag';
+                    tag.style.background = 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)';
                     tag.textContent = data.shift;
                     content.appendChild(tag);
                 }
                 if (data.location) {
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag calendar-tag-location';
+                    tag.className = 'calendar-tag';
+                    tag.style.background = 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)';
                     tag.textContent = data.location;
                     content.appendChild(tag);
                 }
                 if (data.machine) {
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag calendar-tag-machine';
+                    tag.className = 'calendar-tag';
+                    tag.style.background = 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)';
                     tag.textContent = data.machine;
                     content.appendChild(tag);
                 }
                 if (data.operation) {
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag calendar-tag-operation';
+                    tag.className = 'calendar-tag';
+                    tag.style.background = 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)';
                     tag.textContent = data.operation;
                     content.appendChild(tag);
                 }
@@ -785,6 +831,17 @@
             updateEditField('machine', data.machine || '', machines);
             updateEditField('operation', data.operation || '', operations);
 
+            // 為行事曆別根據值動態設置顏色
+            const calendarOptions = document.getElementById('options_calendarType');
+            const tags = calendarOptions.querySelectorAll('.edit-tag-option');
+            tags.forEach(tag => {
+                const value = tag.textContent;
+                if (value === '工作日') tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
+                else if (value === '休息日') tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
+                else if (value === '例假日') tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
+                else if (value === '國定假日') tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
+            });
+
             // 根據行事曆別決定其他字段是否顯示
             const isHoliday = data.calendarType === '例假日';
             document.getElementById('shiftField').style.display = isHoliday ? 'none' : 'flex';
@@ -801,21 +858,33 @@
             loadCalendar();
         }
 
+        // 更新編輯字段為標籤選項
         function updateEditField(field, value, options) {
-            const fieldEl = document.getElementById('edit' + field.charAt(0).toUpperCase() + field.slice(1));
-            fieldEl.textContent = value || field;
-            if (value) fieldEl.classList.add('has-value');
-            else fieldEl.classList.remove('has-value');
+            const container = document.getElementById('options_' + field);
+            container.innerHTML = '';
 
-            const dropdown = document.getElementById('dropdown_' + field);
-            dropdown.innerHTML = options.map(opt => 
-                `<div class="edit-dropdown-item" onclick="selectField('${field}', '${opt}')">${opt}</div>`
-            ).join('');
-        }
-
-        function toggleDropdown(field) {
-            const dropdown = document.getElementById('dropdown_' + field);
-            dropdown.classList.toggle('show');
+            options.forEach(opt => {
+                const tag = document.createElement('span');
+                tag.className = 'edit-tag-option';
+                tag.textContent = opt;
+                if (opt === value) tag.classList.add('selected');
+                tag.onclick = () => selectField(field, opt);
+                
+                // 設置背景顏色
+                if (field === 'calendarType') {
+                    tag.style.background = '#888';
+                } else if (field === 'shift') {
+                    tag.style.background = 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)';
+                } else if (field === 'location') {
+                    tag.style.background = 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)';
+                } else if (field === 'machine') {
+                    tag.style.background = 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)';
+                } else if (field === 'operation') {
+                    tag.style.background = 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)';
+                }
+                
+                container.appendChild(tag);
+            });
         }
 
         function selectField(field, value) {
@@ -837,11 +906,27 @@
                     delete scheduleData[selectedDate].location;
                     delete scheduleData[selectedDate].machine;
                     delete scheduleData[selectedDate].operation;
+                    
+                    // 更新這些字段的顯示
+                    updateEditField('shift', '', shiftTimes);
+                    updateEditField('location', '', baseLocations);
+                    updateEditField('machine', '', machines);
+                    updateEditField('operation', '', operations);
                 }
+
+                // 更新行事曆別標籤顏色
+                const calendarOptions = document.getElementById('options_calendarType');
+                const tags = calendarOptions.querySelectorAll('.edit-tag-option');
+                tags.forEach(tag => {
+                    const tagValue = tag.textContent;
+                    if (tagValue === '工作日') tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
+                    else if (tagValue === '休息日') tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
+                    else if (tagValue === '例假日') tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
+                    else if (tagValue === '國定假日') tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
+                });
             }
 
             updateEditField(field, value, field === 'calendarType' ? calendarTypes : field === 'shift' ? shiftTimes : field === 'location' ? baseLocations : field === 'machine' ? machines : operations);
-            document.getElementById('dropdown_' + field).classList.remove('show');
         }
 
         // 複製貼上
