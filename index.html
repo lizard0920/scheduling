@@ -1079,14 +1079,11 @@
                     </div>
                 </div>`;
             } else {
-                const hasClearBtn = field !== 'calendarType';
-                
                 let html = `<div class="input-wrapper">
                     <div class="input-container">
                         <input type="text" id="${id}" value="${value}" 
                             oninput="onInput('${id}', '${field}', '${dateStr}')"
                             onfocus="onFocus('${id}', '${field}', '${dateStr}')">
-                        ${hasClearBtn ? `<button class="clear-btn" onclick="clearField('${id}', '${field}', '${dateStr}')">✕</button>` : ''}
                     </div>
                     <div class="suggestions" id="sug_${id}">`;
 
