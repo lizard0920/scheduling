@@ -539,6 +539,34 @@
             border: 1px solid #e0e0e0;
         }
 
+        /* 行事曆別 - 工作日：藍色 */
+        .tag-calendarType.tag-calendar-工作日 {
+            background: linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%);
+            color: white;
+            border: none;
+        }
+
+        /* 行事曆別 - 休息日：綠色 */
+        .tag-calendarType.tag-calendar-休息日 {
+            background: linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%);
+            color: white;
+            border: none;
+        }
+
+        /* 行事曆別 - 例假日：紅色 */
+        .tag-calendarType.tag-calendar-例假日 {
+            background: linear-gradient(135deg, #ff9999 0%, #ff6666 100%);
+            color: white;
+            border: none;
+        }
+
+        /* 行事曆別 - 國定假日：粉紅色 */
+        .tag-calendarType.tag-calendar-國定假日 {
+            background: linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%);
+            color: white;
+            border: none;
+        }
+
         .control-panel .suggestions {
             position: absolute;
             top: 100%;
@@ -793,6 +821,115 @@
         .section-content.collapsed {
             max-height: 0;
             overflow: hidden;
+        }
+
+        /* 手机响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                padding: 0 6px;
+            }
+
+            .control-content {
+                padding: 6px 0;
+            }
+
+            .control-section {
+                margin-bottom: 6px;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th {
+                padding: 6px 3px;
+                font-size: 9px;
+            }
+
+            td {
+                padding: 4px 2px;
+            }
+
+            .tag {
+                padding: 5px 10px;
+                font-size: 11px;
+                gap: 2px;
+            }
+
+            .tag-close {
+                font-size: 14px;
+                width: 16px;
+                height: 16px;
+            }
+
+            .tag-container {
+                gap: 2px;
+                padding: 2px 0;
+            }
+
+            .input-wrapper input {
+                font-size: 12px;
+                padding: 4px 6px;
+            }
+
+            .action-btn {
+                padding: 4px 6px;
+                font-size: 10px;
+            }
+
+            .control-panel .form-group label {
+                font-size: 11px;
+            }
+
+            .row select,
+            .row input {
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+
+            button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 4px;
+            }
+
+            table {
+                font-size: 10px;
+            }
+
+            th {
+                padding: 4px 2px;
+                font-size: 8px;
+            }
+
+            td {
+                padding: 2px 1px;
+            }
+
+            .tag {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+
+            .tag-close {
+                font-size: 12px;
+                width: 14px;
+                height: 14px;
+            }
+
+            .action-btn {
+                padding: 3px 4px;
+                font-size: 9px;
+            }
         }
     </style>
 </head>
@@ -1072,8 +1209,14 @@
             
             // 如果有值，显示标签；没有值，显示输入框
             if (value) {
+                // 为行事曆別添加颜色class
+                let tagClassWithColor = tagClass;
+                if (field === 'calendarType') {
+                    tagClassWithColor = `tag-calendarType tag-calendar-${value}`;
+                }
+                
                 return `<div class="tag-container">
-                    <span class="tag ${tagClass}" onclick="editTagField('${id}', '${field}', '${dateStr}')">${value}<span class="tag-close" onclick="clearTagFieldDirect('${dateStr}', '${field}'); event.stopPropagation();">×</span></span>
+                    <span class="tag ${tagClassWithColor}">${value}<span class="tag-close" onclick="clearTagFieldDirect('${dateStr}', '${field}'); event.stopPropagation();">×</span></span>
                     <div class="suggestions" id="sug_${id}" style="display:none;">
                         ${opts.map(o => `<div onclick="selectOpt('${id}', '${field}', '${dateStr}', '${o}')">${o}</div>`).join('')}
                     </div>
