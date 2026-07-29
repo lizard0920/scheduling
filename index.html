@@ -66,19 +66,32 @@
         }
 
         .action-buttons button:nth-child(2) {
+            background: linear-gradient(135deg, #af7ac5 0%, #8e44ad 100%);
+            color: white;
+        }
+
+        .action-buttons button:nth-child(3) {
             background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
             color: white;
         }
 
         .control-section .row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr auto auto;
             gap: 10px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
+        }
+
+        #yearSelect {
+            width: 82px;
+        }
+
+        #monthSelect {
+            width: 56px;
         }
 
         .form-group label {
@@ -165,6 +178,19 @@
         .calendar-day.other-month .calendar-day-number,
         .calendar-day.other-month .calendar-tag {
             opacity: 0.35;
+        }
+
+        /* 選了行事曆別後，當天格子的底色（顏色比標籤淡，且跟標籤/選取色不同） */
+        .calendar-day.status-holiday {
+            background: #f5e6e3;
+        }
+
+        .calendar-day.status-restday {
+            background: #e6efe3;
+        }
+
+        .calendar-day.status-national {
+            background: #f2e3ec;
         }
 
         .calendar-day.selected {
@@ -306,6 +332,12 @@
             color: #34495e;
         }
 
+        .edit-field.field-error {
+            outline: 2px solid #ff6b6b;
+            outline-offset: 6px;
+            border-radius: 10px;
+        }
+
         .edit-field-options {
             display: flex;
             flex-direction: row;
@@ -438,6 +470,84 @@
             background: #ee5a52;
         }
 
+        /* 統計模態 */
+        .stats-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .stats-modal.hidden {
+            display: none;
+        }
+
+        .stats-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .stats-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 16px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 8px 6px;
+            text-align: center;
+            border-bottom: 1px solid #eef0f2;
+        }
+
+        .stats-table th {
+            color: #666;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .stats-table th:first-child,
+        .stats-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .stats-close-btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stats-close-btn:hover {
+            background: #2f89c5;
+        }
+
         /* 手機響應式 */
         @media (max-width: 768px) {
             .container {
@@ -518,6 +628,7 @@
                 <div class="control-section">
                     <div class="action-buttons">
                         <button onclick="saveData()">💾 儲存</button>
+                        <button onclick="showStatsModal()">📈 統計</button>
                         <button onclick="exportExcel()">📊 匯出Excel</button>
                         <span id="savedStatus"></span>
                     </div>
@@ -529,24 +640,13 @@
                             <label>社員編號</label>
                             <input type="text" id="employeeId" placeholder="選擇社員編號">
                         </div>
-                        <div class="form-group">
-                            <label>月份選擇</label>
-                            <select id="monthSelect" onchange="loadCalendar()">
-                                <option value="2026_7">2026年7月</option>
-                                <option value="2026_8">2026年8月</option>
-                                <option value="2026_9">2026年9月</option>
-                                <option value="2026_10">2026年10月</option>
-                                <option value="2026_11">2026年11月</option>
-                                <option value="2026_12">2026年12月</option>
-                            </select>
+                        <div class="form-group compact">
+                            <label>年</label>
+                            <select id="yearSelect" onchange="loadCalendar()"></select>
                         </div>
-                        <div class="form-group">
-                            <label>月份範圍</label>
-                            <select id="rangeSelect" onchange="loadCalendar()">
-                                <option value="1">上(1-15)</option>
-                                <option value="2">下(16-末)</option>
-                                <option value="3" selected>整月</option>
-                            </select>
+                        <div class="form-group compact">
+                            <label>月</label>
+                            <select id="monthSelect" onchange="loadCalendar()"></select>
                         </div>
                     </div>
                 </div>
@@ -576,7 +676,7 @@
                 </div>
             </div>
             <div class="edit-content">
-                <div class="edit-field">
+                <div class="edit-field" id="calendarTypeField">
                     <label>行事曆別</label>
                     <div class="edit-field-options" id="options_calendarType"></div>
                 </div>
@@ -606,6 +706,25 @@
             <div class="error-title">❌ 錯誤提示</div>
             <div id="errorList"></div>
             <button class="error-close-btn" onclick="closeErrorModal()">關閉</button>
+        </div>
+    </div>
+
+    <!-- 統計模態 -->
+    <div class="stats-modal hidden" id="statsModal" onclick="if(event.target === this) closeStatsModal()">
+        <div class="stats-content">
+            <div class="stats-title">📈 排班統計</div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>班別</th>
+                        <th>應排</th>
+                        <th>已排</th>
+                        <th>差異</th>
+                    </tr>
+                </thead>
+                <tbody id="statsTableBody"></tbody>
+            </table>
+            <button class="stats-close-btn" onclick="closeStatsModal()">關閉</button>
         </div>
     </div>
 
@@ -645,9 +764,12 @@
             return FIELD_COLOR[field];
         }
 
+        // 國定假日明細（依日期判斷屬於哪個月份）
+        let nationalHolidays = ['2026/09/25'];
+
         let scheduleData = {};
-        let currentMonth = '2026_7';
-        let currentRange = 3;
+        let currentYear = new Date().getFullYear();
+        let currentMonthNum = new Date().getMonth() + 1;
         let selectedDate = null;
         let clipboard = null;
 
@@ -655,8 +777,31 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadStorage();
             setupEmployeeDropdown();
+            populateYearMonthSelectors();
             loadCalendar();
         });
+
+        // 年/月選單（年份範圍隨當下年份自動往前後展開）
+        function populateYearMonthSelectors() {
+            const yearSelect = document.getElementById('yearSelect');
+            const monthSelect = document.getElementById('monthSelect');
+
+            for (let y = currentYear - 1; y <= currentYear + 3; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === currentYear) opt.selected = true;
+                yearSelect.appendChild(opt);
+            }
+
+            for (let m = 1; m <= 12; m++) {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                if (m === currentMonthNum) opt.selected = true;
+                monthSelect.appendChild(opt);
+            }
+        }
 
         // 儲存和加載
         function loadStorage() {
@@ -673,6 +818,9 @@
 
             const savedOperations = localStorage.getItem('operations');
             if (savedOperations) operations = JSON.parse(savedOperations);
+
+            const savedHolidays = localStorage.getItem('nationalHolidays');
+            if (savedHolidays) nationalHolidays = JSON.parse(savedHolidays);
         }
 
         // 社員編號下拉菜單
@@ -718,12 +866,11 @@
 
         // 加載日曆
         function loadCalendar() {
-            currentMonth = document.getElementById('monthSelect').value;
-            currentRange = parseInt(document.getElementById('rangeSelect').value);
+            currentYear = parseInt(document.getElementById('yearSelect').value);
+            currentMonthNum = parseInt(document.getElementById('monthSelect').value);
 
-            const [year, month] = currentMonth.split('_');
-            const y = parseInt(year);
-            const m = parseInt(month);
+            const y = currentYear;
+            const m = currentMonthNum;
             const days = getDaysInMonth(y, m);
 
             // 更新標題
@@ -788,6 +935,13 @@
             if (hasData) dayEl.classList.add('has-data');
             if (selectedDate === dateStr) dayEl.classList.add('selected');
 
+            // 例假日/休息日/國定假日：當天格子套用對應底色
+            if (!isOtherMonth && data) {
+                if (data.calendarType === '例假日') dayEl.classList.add('status-holiday');
+                else if (data.calendarType === '休息日') dayEl.classList.add('status-restday');
+                else if (data.calendarType === '國定假日') dayEl.classList.add('status-national');
+            }
+
             // 日期號碼（今天填滿藍色圓圈，選取中的日期淺藍圓圈）
             const dayNum = document.createElement('div');
             dayNum.className = 'calendar-day-number';
@@ -847,11 +1001,19 @@
 
             Object.keys(FIELD_OPTIONS).forEach(field => {
                 updateEditField(field, data[field] || '', FIELD_OPTIONS[field]);
+                setFieldErrorState(field, false);
             });
 
             updateFieldVisibility(data.calendarType);
 
             document.getElementById('editModal').style.display = 'flex';
+        }
+
+        // 標示/清除欄位的紅框錯誤提示
+        function setFieldErrorState(field, hasError) {
+            const wrapperId = field === 'calendarType' ? 'calendarTypeField' : field + 'Field';
+            const el = document.getElementById(wrapperId);
+            if (el) el.classList.toggle('field-error', hasError);
         }
 
         function closeEditModal() {
@@ -892,6 +1054,8 @@
         }
 
         function selectField(field, value) {
+            setFieldErrorState(field, false);
+
             if (!scheduleData[selectedDate]) {
                 scheduleData[selectedDate] = {};
             }
@@ -941,11 +1105,14 @@
             }
         }
 
-        // 編輯區塊儲存：用跟整頁儲存相同的規則驗證這一天
+        // 編輯區塊儲存：用跟整頁儲存相同的規則驗證這一天，並把沒選的欄位框紅框
         function saveDayEdit() {
-            const errors = validateDayData(selectedDate, scheduleData[selectedDate]);
-            if (errors.length > 0) {
-                showErrors(errors);
+            ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(f => setFieldErrorState(f, false));
+
+            const result = validateDayData(selectedDate, scheduleData[selectedDate]);
+            if (result.message) {
+                result.missingFields.forEach(f => setFieldErrorState(f, true));
+                showErrors([result.message]);
                 return;
             }
             closeEditModal();
@@ -991,62 +1158,51 @@
         // (3) 五格都空白可以
         // (4) 選工作日：其他四格一定要全選
         // (5) 選了其他四格中任一格，但沒選行事曆別，也算錯誤
+        // 回傳 { message, missingFields }：message 為簡短錯誤訊息，missingFields 是需要框紅框提示的欄位
         function validateDayData(dateStr, data) {
-            const errors = [];
-            if (!data) return errors;
+            if (!data) return { message: null, missingFields: [] };
 
-            const others = [data.shift, data.location, data.machine, data.operation];
-            const filledCount = others.filter(v => v).length;
+            const fieldKeys = ['shift', 'location', 'machine', 'operation'];
+            const filled = fieldKeys.filter(f => data[f]);
+            const missing = fieldKeys.filter(f => !data[f]);
 
             if (!data.calendarType) {
-                if (filledCount > 0) {
-                    errors.push(`${dateStr} 請選擇行事曆別`);
+                if (filled.length > 0) {
+                    return { message: `${dateStr} 資訊不完整`, missingFields: ['calendarType'] };
                 }
-                return errors;
+                return { message: null, missingFields: [] };
             }
 
             if (data.calendarType === '例假日') {
-                return errors;
+                return { message: null, missingFields: [] };
             }
 
             if (data.calendarType === '工作日') {
-                if (filledCount < 4) {
-                    errors.push(`${dateStr} 選擇工作日時，班別/地點/機台/內容需全部選擇`);
+                if (filled.length < 4) {
+                    return { message: `${dateStr} 資訊不完整`, missingFields: missing };
                 }
-                return errors;
+                return { message: null, missingFields: [] };
             }
 
             // 休息日 / 國定假日 / 請假：全部選擇或全部空白
-            if (filledCount > 0 && filledCount < 4) {
-                errors.push(`${dateStr} 班別/地點/機台/內容需全部選擇或全部空白`);
+            if (filled.length > 0 && filled.length < 4) {
+                return { message: `${dateStr} 資訊不完整`, missingFields: missing };
             }
-            return errors;
+            return { message: null, missingFields: [] };
         }
 
         // 驗證邏輯（保持原有的所有規則）
         function validateData() {
             const errors = [];
-            const [year, month] = currentMonth.split('_');
-            const y = parseInt(year);
-            const m = parseInt(month);
+            const y = currentYear;
+            const m = currentMonthNum;
             const days = getDaysInMonth(y, m);
 
-            let start, end;
-            if (currentRange === 1) {
-                start = 1;
-                end = 15;
-            } else if (currentRange === 2) {
-                start = 16;
-                end = days;
-            } else {
-                start = 1;
-                end = days;
-            }
-
             // 檢查資料完整性
-            for (let d = start; d <= end; d++) {
+            for (let d = 1; d <= days; d++) {
                 const dateStr = `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
-                errors.push(...validateDayData(dateStr, scheduleData[dateStr]));
+                const result = validateDayData(dateStr, scheduleData[dateStr]);
+                if (result.message) errors.push(result.message);
             }
 
             // 7天規則檢查（保持原有邏輯）
@@ -1065,6 +1221,71 @@
 
         function closeErrorModal() {
             document.getElementById('errorModal').classList.add('hidden');
+        }
+
+        // 統計：應排（依規則計算）vs 已排（實際輸入的資料）
+        function countWeekday(y, m, weekday) {
+            const days = getDaysInMonth(y, m);
+            let count = 0;
+            for (let d = 1; d <= days; d++) {
+                if (new Date(y, m - 1, d).getDay() === weekday) count++;
+            }
+            return count;
+        }
+
+        function countNationalHolidays(y, m) {
+            const prefix = `${y}/${String(m).padStart(2, '0')}/`;
+            return nationalHolidays.filter(d => d.startsWith(prefix)).length;
+        }
+
+        function computeStats() {
+            const y = currentYear;
+            const m = currentMonthNum;
+            const days = getDaysInMonth(y, m);
+
+            const restExpected = countWeekday(y, m, 6);      // 休息日＝當月週六天數
+            const holidayExpected = countWeekday(y, m, 0);   // 例假日＝當月週日天數
+            const nationalExpected = countNationalHolidays(y, m);
+            const workExpected = days - (restExpected + holidayExpected + nationalExpected);
+
+            const actual = { '工作日': 0, '休息日': 0, '例假日': 0, '國定假日': 0 };
+            const prefix = `${y}/${String(m).padStart(2, '0')}/`;
+            Object.keys(scheduleData).forEach(dateStr => {
+                if (!dateStr.startsWith(prefix)) return;
+                const type = scheduleData[dateStr].calendarType;
+                if (type && actual.hasOwnProperty(type)) actual[type]++;
+            });
+
+            return [
+                { label: '工作日', expected: workExpected, actual: actual['工作日'] },
+                { label: '休息日', expected: restExpected, actual: actual['休息日'] },
+                { label: '例假日', expected: holidayExpected, actual: actual['例假日'] },
+                { label: '國定假日', expected: nationalExpected, actual: actual['國定假日'] }
+            ];
+        }
+
+        function diffLabel(expected, actual) {
+            const diff = expected - actual;
+            if (diff > 0) return `少${diff}天`;
+            if (diff < 0) return `多${-diff}天`;
+            return '-';
+        }
+
+        function showStatsModal() {
+            const rows = computeStats();
+            document.getElementById('statsTableBody').innerHTML = rows.map(r => `
+                <tr>
+                    <td>${r.label}</td>
+                    <td>${r.expected}</td>
+                    <td>${r.actual}</td>
+                    <td>${diffLabel(r.expected, r.actual)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('statsModal').classList.remove('hidden');
+        }
+
+        function closeStatsModal() {
+            document.getElementById('statsModal').classList.add('hidden');
         }
 
         // 匯出Excel（暫未實現）
