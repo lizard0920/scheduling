@@ -255,6 +255,13 @@
             }
         }
 
+        .edit-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: white;
+        }
+
         .edit-header {
             display: flex;
             justify-content: space-between;
@@ -328,16 +335,16 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
-        .edit-actions {
+        .edit-toolbar {
             display: flex;
-            gap: 10px;
-            padding: 16px;
-            border-top: 1px solid #e0e3e8;
+            gap: 8px;
+            padding: 10px 16px 14px;
+            border-bottom: 1px solid #e0e3e8;
         }
 
-        .edit-actions button {
+        .edit-toolbar button {
             flex: 1;
-            padding: 12px 16px;
+            padding: 10px 8px;
             border: none;
             border-radius: 6px;
             font-size: 13px;
@@ -346,21 +353,30 @@
             transition: all 0.2s;
         }
 
-        .edit-actions .action-btn {
+        .edit-toolbar .action-btn {
             background: #f0f0f0;
             color: #666;
         }
 
-        .edit-actions .action-btn:hover {
+        .edit-toolbar .action-btn:hover {
             background: #e0e0e0;
         }
 
-        .edit-actions .action-btn.clear {
+        .edit-toolbar .action-btn.save {
+            background: linear-gradient(135deg, #48c774 0%, #1abc9c 100%);
+            color: white;
+        }
+
+        .edit-toolbar .action-btn.save:hover {
+            filter: brightness(1.05);
+        }
+
+        .edit-toolbar .action-btn.clear {
             background: #ff6b6b;
             color: white;
         }
 
-        .edit-actions .action-btn.clear:hover {
+        .edit-toolbar .action-btn.clear:hover {
             background: #ee5a52;
         }
 
@@ -547,9 +563,17 @@
     <!-- 編輯面板 -->
     <div class="edit-modal" id="editModal" style="display:none;" onclick="if(event.target === this) closeEditModal()">
         <div class="edit-panel">
-            <div class="edit-header">
-                <span id="editDateTitle"></span>
-                <button class="close-btn" onclick="closeEditModal()">✕</button>
+            <div class="edit-sticky">
+                <div class="edit-header">
+                    <span id="editDateTitle"></span>
+                    <button class="close-btn" onclick="closeEditModal()">✕</button>
+                </div>
+                <div class="edit-toolbar">
+                    <button class="action-btn save" onclick="saveDayEdit()">儲存</button>
+                    <button class="action-btn" onclick="copyDate()">複製</button>
+                    <button class="action-btn" onclick="pasteDate()">貼上</button>
+                    <button class="action-btn clear" onclick="clearDate()">✕</button>
+                </div>
             </div>
             <div class="edit-content">
                 <div class="edit-field">
@@ -572,11 +596,6 @@
                     <label>內容</label>
                     <div class="edit-field-options" id="options_operation" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
-            </div>
-            <div class="edit-actions">
-                <button class="action-btn" onclick="copyDate()">複製</button>
-                <button class="action-btn" onclick="pasteDate()">貼上</button>
-                <button class="action-btn clear" onclick="clearDate()">✕</button>
             </div>
         </div>
     </div>
@@ -922,6 +941,16 @@
             }
         }
 
+        // 編輯區塊儲存：用跟整頁儲存相同的規則驗證這一天
+        function saveDayEdit() {
+            const errors = validateDayData(selectedDate, scheduleData[selectedDate]);
+            if (errors.length > 0) {
+                showErrors(errors);
+                return;
+            }
+            closeEditModal();
+        }
+
         // 儲存
         function saveData() {
             const employeeId = document.getElementById('employeeId').value;
@@ -956,6 +985,44 @@
             }, 2000);
         }
 
+        // 單日資料驗證規則（全頁儲存與編輯區塊儲存共用同一套規則）：
+        // (1) 選例假日：其他四格不需選擇
+        // (2) 選休息日/國定假日/請假：其他四格全部空白可以，但只選了一部分就算錯誤
+        // (3) 五格都空白可以
+        // (4) 選工作日：其他四格一定要全選
+        // (5) 選了其他四格中任一格，但沒選行事曆別，也算錯誤
+        function validateDayData(dateStr, data) {
+            const errors = [];
+            if (!data) return errors;
+
+            const others = [data.shift, data.location, data.machine, data.operation];
+            const filledCount = others.filter(v => v).length;
+
+            if (!data.calendarType) {
+                if (filledCount > 0) {
+                    errors.push(`${dateStr} 請選擇行事曆別`);
+                }
+                return errors;
+            }
+
+            if (data.calendarType === '例假日') {
+                return errors;
+            }
+
+            if (data.calendarType === '工作日') {
+                if (filledCount < 4) {
+                    errors.push(`${dateStr} 選擇工作日時，班別/地點/機台/內容需全部選擇`);
+                }
+                return errors;
+            }
+
+            // 休息日 / 國定假日 / 請假：全部選擇或全部空白
+            if (filledCount > 0 && filledCount < 4) {
+                errors.push(`${dateStr} 班別/地點/機台/內容需全部選擇或全部空白`);
+            }
+            return errors;
+        }
+
         // 驗證邏輯（保持原有的所有規則）
         function validateData() {
             const errors = [];
@@ -979,29 +1046,7 @@
             // 檢查資料完整性
             for (let d = start; d <= end; d++) {
                 const dateStr = `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
-                const data = scheduleData[dateStr];
-                
-                if (!data || (!data.calendarType && !data.shift && !data.location && !data.machine && !data.operation)) {
-                    continue;
-                }
-
-                const hasShift = data && data.shift;
-                const hasLocation = data && data.location;
-                const hasMachine = data && data.machine;
-                const hasOperation = data && data.operation;
-                const hasCalendarType = data && data.calendarType;
-                
-                const hasAnyField = hasShift || hasLocation || hasMachine || hasOperation;
-                
-                if (hasAnyField) {
-                    if (!hasCalendarType) {
-                        errors.push(`${dateStr} 請選擇行事曆別`);
-                    }
-                    
-                    if (!hasShift || !hasLocation || !hasMachine || !hasOperation) {
-                        errors.push(`${dateStr} 資料不完整`);
-                    }
-                }
+                errors.push(...validateDayData(dateStr, scheduleData[dateStr]));
             }
 
             // 7天規則檢查（保持原有邏輯）
