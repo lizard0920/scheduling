@@ -43,6 +43,10 @@
             margin-bottom: 10px;
         }
 
+        .unfrozen-row {
+            padding-top: 12px;
+        }
+
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -412,6 +416,21 @@
             background: #ee5a52;
         }
 
+        .edit-toolbar .action-btn.copy {
+            background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+            color: white;
+        }
+
+        .edit-toolbar .action-btn.copy:hover {
+            filter: brightness(1.05);
+        }
+
+        /* 儲存/複製並儲存的短暫回饋動畫 */
+        .edit-toolbar .action-btn.btn-feedback {
+            transform: scale(1.06);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+        }
+
         /* 錯誤模態 */
         .error-modal {
             position: fixed;
@@ -548,6 +567,66 @@
             background: #2f89c5;
         }
 
+        /* 儲存後差異提醒（非錯誤，只是提醒，用琥珀色跟錯誤的紅色區隔） */
+        .reminder-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .reminder-modal.hidden {
+            display: none;
+        }
+
+        .reminder-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 400px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .reminder-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e67e22;
+            margin-bottom: 12px;
+        }
+
+        .reminder-item {
+            font-size: 13px;
+            color: #7a4a12;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+            background: #fff3cd;
+            border-left: 3px solid #f39c12;
+            border-radius: 4px;
+        }
+
+        .reminder-close-btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reminder-close-btn:hover {
+            background: #e08e0b;
+        }
+
         /* 手機響應式 */
         @media (max-width: 768px) {
             .container {
@@ -622,7 +701,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- 控制面板 -->
+        <!-- 控制面板（儲存/統計/匯出Excel 保持凍結） -->
         <div class="control-panel">
             <div class="control-content">
                 <div class="control-section">
@@ -633,22 +712,23 @@
                         <span id="savedStatus"></span>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="control-section">
-                    <div class="row">
-                        <div class="form-group">
-                            <label>社員編號</label>
-                            <input type="text" id="employeeId" placeholder="選擇社員編號">
-                        </div>
-                        <div class="form-group compact">
-                            <label>年</label>
-                            <select id="yearSelect" onchange="loadCalendar()"></select>
-                        </div>
-                        <div class="form-group compact">
-                            <label>月</label>
-                            <select id="monthSelect" onchange="loadCalendar()"></select>
-                        </div>
-                    </div>
+        <!-- 社員編號/年/月：不凍結 -->
+        <div class="control-section unfrozen-row">
+            <div class="row">
+                <div class="form-group">
+                    <label>社員編號</label>
+                    <input type="text" id="employeeId" placeholder="選擇社員編號">
+                </div>
+                <div class="form-group compact">
+                    <label>年</label>
+                    <select id="yearSelect" onchange="loadCalendar()"></select>
+                </div>
+                <div class="form-group compact">
+                    <label>月</label>
+                    <select id="monthSelect" onchange="loadCalendar()"></select>
                 </div>
             </div>
         </div>
@@ -670,7 +750,7 @@
                 </div>
                 <div class="edit-toolbar">
                     <button class="action-btn save" onclick="saveDayEdit()">儲存</button>
-                    <button class="action-btn" onclick="copyDate()">複製</button>
+                    <button class="action-btn copy" onclick="copyAndSaveDayEdit()">複製並儲存</button>
                     <button class="action-btn" onclick="pasteDate()">貼上</button>
                     <button class="action-btn clear" onclick="clearDate()">✕</button>
                 </div>
@@ -725,6 +805,15 @@
                 <tbody id="statsTableBody"></tbody>
             </table>
             <button class="stats-close-btn" onclick="closeStatsModal()">關閉</button>
+        </div>
+    </div>
+
+    <!-- 儲存後差異提醒（不影響已完成的儲存） -->
+    <div class="reminder-modal hidden" id="reminderModal" onclick="if(event.target === this) closeReminderModal()">
+        <div class="reminder-content">
+            <div class="reminder-title">📋 排班差異提醒</div>
+            <div id="reminderList"></div>
+            <button class="reminder-close-btn" onclick="closeReminderModal()">關閉</button>
         </div>
     </div>
 
@@ -1105,6 +1194,18 @@
             }
         }
 
+        // 按鈕短暫回饋：文字/樣式閃一下，再執行後續動作
+        function flashButtonFeedback(btn, tempText, callback) {
+            const original = btn.textContent;
+            btn.textContent = tempText;
+            btn.classList.add('btn-feedback');
+            setTimeout(() => {
+                btn.textContent = original;
+                btn.classList.remove('btn-feedback');
+                if (callback) callback();
+            }, 450);
+        }
+
         // 編輯區塊儲存：用跟整頁儲存相同的規則驗證這一天，並把沒選的欄位框紅框
         function saveDayEdit() {
             ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(f => setFieldErrorState(f, false));
@@ -1115,7 +1216,21 @@
                 showErrors([result.message]);
                 return;
             }
-            closeEditModal();
+            flashButtonFeedback(document.querySelector('.edit-toolbar .action-btn.save'), '✓ 已儲存', closeEditModal);
+        }
+
+        // 複製並儲存：驗證通過後，先把這一天存進剪貼簿，再關閉面板
+        function copyAndSaveDayEdit() {
+            ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(f => setFieldErrorState(f, false));
+
+            const result = validateDayData(selectedDate, scheduleData[selectedDate]);
+            if (result.message) {
+                result.missingFields.forEach(f => setFieldErrorState(f, true));
+                showErrors([result.message]);
+                return;
+            }
+            copyDate();
+            flashButtonFeedback(document.querySelector('.edit-toolbar .action-btn.copy'), '✓ 已複製並儲存', closeEditModal);
         }
 
         // 儲存
@@ -1144,12 +1259,29 @@
 
             localStorage.setItem('currentEmployeeId', employeeId);
             localStorage.setItem('scheduleData', JSON.stringify(scheduleData));
-            
+
             const status = document.getElementById('savedStatus');
             status.innerHTML = '<span class="saved-badge">✓ 已儲存</span>';
             setTimeout(() => {
                 status.innerHTML = '';
             }, 2000);
+
+            showSaveReminder();
+        }
+
+        // 儲存成功後，提醒有差異的班別（不影響已完成的儲存）
+        function showSaveReminder() {
+            const diffRows = computeStats().filter(r => r.expected !== r.actual);
+            if (diffRows.length === 0) return;
+
+            document.getElementById('reminderList').innerHTML = diffRows.map(r =>
+                `<div class="reminder-item">${r.label} ${diffLabel(r.expected, r.actual)}</div>`
+            ).join('');
+            document.getElementById('reminderModal').classList.remove('hidden');
+        }
+
+        function closeReminderModal() {
+            document.getElementById('reminderModal').classList.add('hidden');
         }
 
         // 單日資料驗證規則（全頁儲存與編輯區塊儲存共用同一套規則）：
