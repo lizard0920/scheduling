@@ -661,12 +661,12 @@
     </div>
 
     <!-- 編輯面板 -->
-    <div class="edit-modal" id="editModal" style="display:none;" onclick="if(event.target === this) closeEditModal()">
+    <div class="edit-modal" id="editModal" style="display:none;" onclick="if(event.target === this) saveDayEdit()">
         <div class="edit-panel">
             <div class="edit-sticky">
                 <div class="edit-header">
                     <span id="editDateTitle"></span>
-                    <button class="close-btn" onclick="closeEditModal()">✕</button>
+                    <button class="close-btn" onclick="saveDayEdit()">✕</button>
                 </div>
                 <div class="edit-toolbar">
                     <button class="action-btn save" onclick="saveDayEdit()">儲存</button>
@@ -1191,6 +1191,83 @@
             return { message: null, missingFields: [] };
         }
 
+        function isDayEmpty(dateStr) {
+            const data = scheduleData[dateStr];
+            return !data || (!data.calendarType && !data.shift && !data.location && !data.machine && !data.operation);
+        }
+
+        // 每連續7天須至少排一天例假日；只檢查「這7天都已排班」的區間，
+        // 範圍涵蓋當月、前一個月最後7天、後一個月前7天（跨月自動處理進位）
+        function checkSevenDayRule(y, m) {
+            const errors = [];
+            const days = getDaysInMonth(y, m);
+            const reported = new Set();
+
+            let startDay = 1 - 6;
+            let startMonth = m;
+            let startYear = y;
+            if (startDay <= 0) {
+                startMonth = m - 1;
+                startYear = y;
+                if (startMonth < 1) {
+                    startMonth = 12;
+                    startYear = y - 1;
+                }
+                const prevDays = getDaysInMonth(startYear, startMonth);
+                startDay = prevDays + startDay;
+            }
+
+            let curD = startDay, curM = startMonth, curY = startYear;
+
+            while (true) {
+                const windowDates = [];
+                let allFilled = true;
+
+                for (let offset = 0; offset < 7; offset++) {
+                    let d = curD + offset, mm = curM, yy = curY;
+                    let dim = getDaysInMonth(yy, mm);
+                    while (d > dim) {
+                        d -= dim;
+                        mm++;
+                        if (mm > 12) { mm = 1; yy++; }
+                        dim = getDaysInMonth(yy, mm);
+                    }
+                    const dateStr = `${yy}/${String(mm).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+                    if (isDayEmpty(dateStr)) {
+                        allFilled = false;
+                        break;
+                    }
+                    windowDates.push({ m: mm, d, type: scheduleData[dateStr].calendarType || '' });
+                }
+
+                if (allFilled) {
+                    const hasHoliday = windowDates.some(x => x.type === '例假日');
+                    if (!hasHoliday) {
+                        const first = windowDates[0], last = windowDates[6];
+                        const key = `${first.m}/${first.d}-${last.m}/${last.d}`;
+                        if (!reported.has(key)) {
+                            reported.add(key);
+                            errors.push(`${key} 每7天需安排一天例假日`);
+                        }
+                    }
+                }
+
+                curD++;
+                const dim = getDaysInMonth(curY, curM);
+                if (curD > dim) {
+                    curD = 1;
+                    curM++;
+                    if (curM > 12) { curM = 1; curY++; }
+                }
+
+                if (curY > y || (curY === y && curM > m) || (curY === y && curM === m && curD > days)) {
+                    break;
+                }
+            }
+
+            return errors;
+        }
+
         // 驗證邏輯（保持原有的所有規則）
         function validateData() {
             const errors = [];
@@ -1205,8 +1282,8 @@
                 if (result.message) errors.push(result.message);
             }
 
-            // 7天規則檢查（保持原有邏輯）
-            // TODO: 實現7天規則
+            // 每7天需有一天例假日
+            errors.push(...checkSevenDayRule(y, m));
 
             return errors;
         }
