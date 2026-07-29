@@ -697,6 +697,93 @@
                 padding: 6px 10px;
             }
         }
+
+        /* 電腦（寬螢幕）：手機版樣式不變，這裡只針對較寬的螢幕放大字級並限制寬度 */
+        @media (min-width: 769px) {
+            .container {
+                max-width: 720px;
+                padding: 0 16px;
+            }
+
+            .action-buttons button {
+                font-size: 16px;
+                padding: 12px 20px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-group input,
+            .form-group select {
+                font-size: 15px;
+                padding: 10px 12px;
+            }
+
+            #yearSelect {
+                width: 100px;
+            }
+
+            #monthSelect {
+                width: 74px;
+            }
+
+            .calendar-section {
+                padding: 20px;
+            }
+
+            .calendar-title {
+                font-size: 22px;
+                margin-bottom: 20px;
+            }
+
+            .calendar-weekday {
+                font-size: 14px;
+                padding: 10px 4px;
+            }
+
+            .calendar-day {
+                min-height: 112px;
+                padding: 8px 6px 12px;
+            }
+
+            .calendar-day-number {
+                font-size: 16px;
+                margin-bottom: 6px;
+            }
+
+            .day-number-circle {
+                width: 30px;
+                height: 30px;
+            }
+
+            .calendar-day-content {
+                gap: 5px;
+            }
+
+            .calendar-tag {
+                font-size: 12px;
+                padding: 5px 6px;
+                border-radius: 6px;
+            }
+
+            .edit-modal {
+                align-items: center;
+                justify-content: center;
+            }
+
+            .edit-panel {
+                max-width: 480px;
+                width: 90%;
+                border-radius: 12px;
+                max-height: 85vh;
+            }
+
+            .edit-tag-option {
+                font-size: 14px;
+                padding: 9px 16px;
+            }
+        }
     </style>
 </head>
 <body>
