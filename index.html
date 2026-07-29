@@ -948,6 +948,19 @@
         let currentMonthNum = new Date().getMonth() + 1;
         let selectedDate = null;
         let clipboard = null;
+        let hasUnsavedChanges = false;
+
+        function markUnsaved() {
+            hasUnsavedChanges = true;
+        }
+
+        // 有未儲存的變更時，關閉分頁或重新整理會跳出瀏覽器內建的離開確認
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -1014,6 +1027,7 @@
                 item.onclick = () => {
                     input.value = `${r.code} ${r.name}`;
                     suggestions.style.display = 'none';
+                    markUnsaved();
                 };
                 suggestions.appendChild(item);
             });
@@ -1037,6 +1051,7 @@
                     item.style.display = item.textContent.toUpperCase().includes(val) ? 'block' : 'none';
                 });
                 suggestions.style.display = 'block';
+                markUnsaved();
             });
         }
 
@@ -1231,6 +1246,7 @@
 
         function selectField(field, value) {
             setFieldErrorState(field, false);
+            markUnsaved();
 
             if (!scheduleData[selectedDate]) {
                 scheduleData[selectedDate] = {};
@@ -1270,6 +1286,7 @@
         function pasteDate() {
             if (clipboard && selectedDate) {
                 scheduleData[selectedDate] = JSON.parse(JSON.stringify(clipboard));
+                markUnsaved();
                 closeEditModal();
             }
         }
@@ -1277,6 +1294,7 @@
         function clearDate() {
             if (selectedDate) {
                 delete scheduleData[selectedDate];
+                markUnsaved();
                 closeEditModal();
             }
         }
@@ -1346,6 +1364,7 @@
 
             localStorage.setItem('currentEmployeeId', employeeId);
             localStorage.setItem('scheduleData', JSON.stringify(scheduleData));
+            hasUnsavedChanges = false;
 
             const status = document.getElementById('savedStatus');
             status.innerHTML = '<span class="saved-badge">✓ 已儲存</span>';
