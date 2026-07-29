@@ -123,7 +123,9 @@
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
+            gap: 0;
+            border-top: 1px solid #eef0f2;
+            border-left: 1px solid #eef0f2;
         }
 
         .calendar-weekday {
@@ -131,52 +133,68 @@
             font-weight: 600;
             font-size: 12px;
             color: #666;
-            padding: 8px;
-            background: #f5f5f5;
-            border-radius: 4px;
+            padding: 8px 2px;
+            background: #fafbfc;
+            border-bottom: 2px solid #eef0f2;
         }
 
-        /* 日期卡片 */
+        /* 日期格 */
         .calendar-day {
-            aspect-ratio: 1;
             background: white;
-            border: 2px solid #e0e3e8;
-            border-radius: 8px;
-            padding: 8px;
+            border-right: 1px solid #eef0f2;
+            border-bottom: 1px solid #eef0f2;
+            padding: 6px 3px 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
             display: flex;
             flex-direction: column;
+            align-items: center;
             overflow: hidden;
             position: relative;
+            min-height: 76px;
         }
 
         .calendar-day:hover {
-            border-color: #3498db;
-            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
-            transform: translateY(-2px);
+            background: #f5faff;
         }
 
         .calendar-day.other-month {
-            background: #f9f9f9;
-            opacity: 0.5;
+            background: #fbfbfb;
         }
 
-        .calendar-day.has-data {
-            border-color: #1abc9c;
-            border-width: 2px;
+        .calendar-day.other-month .calendar-day-number,
+        .calendar-day.other-month .calendar-tag {
+            opacity: 0.35;
         }
 
         .calendar-day.selected {
-            background: #e3f2fd;
-            border-color: #3498db;
+            background: #eef7ff;
         }
 
         .calendar-day-number {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 4px;
+        }
+
+        .day-number-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .day-number-circle.today {
+            background: #4c8dff;
+            color: white;
+        }
+
+        .day-number-circle.active-day {
+            background: #bcdcff;
+            color: #1c4e8a;
         }
 
         .calendar-day.other-month .calendar-day-number {
@@ -185,7 +203,7 @@
 
         .calendar-day-content {
             font-size: 10px;
-            flex: 1;
+            width: 100%;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -193,35 +211,17 @@
         }
 
         .calendar-tag {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 10px;
+            display: block;
+            width: 100%;
+            padding: 2px 3px;
+            border-radius: 5px;
+            font-size: 9px;
+            line-height: 1.25;
             font-weight: 600;
             color: white;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .calendar-tag-calendar {
-            background: #888;
-        }
-
-        .calendar-tag-shift {
-            background: #2c3e50;
-        }
-
-        .calendar-tag-location {
-            background: #3498db;
-        }
-
-        .calendar-tag-machine {
-            background: #ff69b4;
-        }
-
-        .calendar-tag-operation {
-            background: #1abc9c;
+            text-align: center;
+            white-space: normal;
+            word-break: break-word;
         }
 
         /* 編輯面板 */
@@ -301,8 +301,9 @@
 
         .edit-field-options {
             display: flex;
-            flex-direction: column;
-            gap: 6px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .edit-tag-option {
@@ -311,20 +312,20 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
-            color: white;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
+            background: white;
+            border: 2px solid;
+            transition: all 0.15s;
         }
 
         .edit-tag-option:hover {
             transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         .edit-tag-option.selected {
-            border-color: #333;
-            box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+            color: white !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
         .edit-actions {
@@ -597,11 +598,33 @@
             {"name": "許博壹", "code": "S0193"}
         ];
 
-        const calendarTypes = ['工作日', '休息日', '例假日', '國定假日'];
+        const calendarTypes = ['工作日', '休息日', '例假日', '國定假日', '請假'];
         const shiftTimes = ['0800', '0830', '0900', '0930', '1000', '1030', '1100', '1130', '1200', '1230', '1300', '1330', '1400', '1430', '1500', '1530', '1600', '1630', '1700', '1730', '1800', '1830', '1900', '1930', '2000', '2030', '2100', '2130', '2200', '2230', '2300', '2330', '0000', '0030', '0100', '0130', '0200', '0230', '0300', '0330', '0400', '0430', '0500', '0530', '0600', '0630', '0700', '0730'];
         const baseLocations = ['(台灣)台中', '(台灣)台南', '(台灣)高雄', '(海外)美國', '(海外)新加坡'];
         let machines = ['無', 'CT-Z', 'CT-V', 'CT-Q', 'CT-K', 'CT-N', 'CT-KK', 'CT-DC', 'CT-KSQ', 'CT-E'];
         let operations = ['待機', '移動/事務處理', '事務處理', '教育/研修', 'HOOK', 'Troubleshooting', '準備/書類/場勘', '會議', '清機', 'Process', 'HARD', '安全巡視'];
+
+        // 各欄位顏色（曆別依值而定，其餘欄位固定色）
+        const CALENDAR_TYPE_COLOR = {
+            '工作日': { base: '#81c3e8', gradient: 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)' },
+            '休息日': { base: '#81d89f', gradient: 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)' },
+            '例假日': { base: '#ff6666', gradient: 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)' },
+            '國定假日': { base: '#ff99cc', gradient: 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)' },
+            '請假': { base: '#64b5f6', gradient: 'linear-gradient(135deg, #90caf9 0%, #64b5f6 100%)' }
+        };
+        const FIELD_COLOR = {
+            shift: { base: '#2c3e50', gradient: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)' },
+            location: { base: '#3498db', gradient: 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)' },
+            machine: { base: '#ff69b4', gradient: 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)' },
+            operation: { base: '#1abc9c', gradient: 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)' }
+        };
+
+        function getFieldColor(field, value) {
+            if (field === 'calendarType') {
+                return CALENDAR_TYPE_COLOR[value] || { base: '#888', gradient: '#888' };
+            }
+            return FIELD_COLOR[field];
+        }
 
         let scheduleData = {};
         let currentMonth = '2026_7';
@@ -729,6 +752,11 @@
             }
         }
 
+        function isToday(y, m, d) {
+            const now = new Date();
+            return now.getFullYear() === y && now.getMonth() + 1 === m && now.getDate() === d;
+        }
+
         // 添加日期元素
         function addDayElement(calendar, y, m, d, isOtherMonth) {
             const dateStr = `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
@@ -741,63 +769,30 @@
             if (hasData) dayEl.classList.add('has-data');
             if (selectedDate === dateStr) dayEl.classList.add('selected');
 
-            // 日期號碼
+            // 日期號碼（今天填滿藍色圓圈，選取中的日期淺藍圓圈）
             const dayNum = document.createElement('div');
             dayNum.className = 'calendar-day-number';
-            dayNum.textContent = d;
+            const dayCircle = document.createElement('span');
+            dayCircle.className = 'day-number-circle';
+            if (!isOtherMonth && isToday(y, m, d)) dayCircle.classList.add('today');
+            else if (selectedDate === dateStr) dayCircle.classList.add('active-day');
+            dayCircle.textContent = d;
+            dayNum.appendChild(dayCircle);
             dayEl.appendChild(dayNum);
 
-            // 內容
+            // 內容：曆別、班別、地點、機台、內容 五項全部顯示
             if (hasData && !isOtherMonth) {
                 const content = document.createElement('div');
                 content.className = 'calendar-day-content';
-                
-                if (data.calendarType) {
+
+                ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(field => {
+                    if (!data[field]) return;
                     const tag = document.createElement('span');
                     tag.className = 'calendar-tag';
-                    tag.textContent = data.calendarType;
-                    
-                    // 根據行事曆別值設置顏色
-                    if (data.calendarType === '工作日') {
-                        tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
-                    } else if (data.calendarType === '休息日') {
-                        tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
-                    } else if (data.calendarType === '例假日') {
-                        tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
-                    } else if (data.calendarType === '國定假日') {
-                        tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
-                    }
-                    
+                    tag.style.background = getFieldColor(field, data[field]).gradient;
+                    tag.textContent = data[field];
                     content.appendChild(tag);
-                }
-                if (data.shift) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)';
-                    tag.textContent = data.shift;
-                    content.appendChild(tag);
-                }
-                if (data.location) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)';
-                    tag.textContent = data.location;
-                    content.appendChild(tag);
-                }
-                if (data.machine) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)';
-                    tag.textContent = data.machine;
-                    content.appendChild(tag);
-                }
-                if (data.operation) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)';
-                    tag.textContent = data.operation;
-                    content.appendChild(tag);
-                }
+                });
 
                 dayEl.appendChild(content);
             }
@@ -817,37 +812,25 @@
         }
 
         // 編輯面板
+        const FIELD_OPTIONS = {
+            calendarType: calendarTypes,
+            shift: shiftTimes,
+            location: baseLocations,
+            machine: machines,
+            operation: operations
+        };
+
         function openEditModal(dateStr) {
             selectedDate = dateStr;
             const data = scheduleData[dateStr] || {};
-            
-            const [y, m, d] = dateStr.split('/');
-            document.getElementById('editDateTitle').textContent = `${dateStr}`;
-            
-            // 更新字段顯示
-            updateEditField('calendarType', data.calendarType || '', calendarTypes);
-            updateEditField('shift', data.shift || '', shiftTimes);
-            updateEditField('location', data.location || '', baseLocations);
-            updateEditField('machine', data.machine || '', machines);
-            updateEditField('operation', data.operation || '', operations);
 
-            // 為行事曆別根據值動態設置顏色
-            const calendarOptions = document.getElementById('options_calendarType');
-            const tags = calendarOptions.querySelectorAll('.edit-tag-option');
-            tags.forEach(tag => {
-                const value = tag.textContent;
-                if (value === '工作日') tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
-                else if (value === '休息日') tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
-                else if (value === '例假日') tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
-                else if (value === '國定假日') tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
+            document.getElementById('editDateTitle').textContent = dateStr;
+
+            Object.keys(FIELD_OPTIONS).forEach(field => {
+                updateEditField(field, data[field] || '', FIELD_OPTIONS[field]);
             });
 
-            // 根據行事曆別決定其他字段是否顯示
-            const isHoliday = data.calendarType === '例假日';
-            document.getElementById('shiftField').style.display = isHoliday ? 'none' : 'flex';
-            document.getElementById('locationField').style.display = isHoliday ? 'none' : 'flex';
-            document.getElementById('machineField').style.display = isHoliday ? 'none' : 'flex';
-            document.getElementById('operationField').style.display = isHoliday ? 'none' : 'flex';
+            updateFieldVisibility(data.calendarType);
 
             document.getElementById('editModal').style.display = 'flex';
         }
@@ -858,31 +841,33 @@
             loadCalendar();
         }
 
-        // 更新編輯字段為標籤選項
+        // 根據行事曆別決定其他字段是否顯示（例假日不需要班別/地點/機台/內容）
+        function updateFieldVisibility(calendarType) {
+            const isHoliday = calendarType === '例假日';
+            document.getElementById('shiftField').style.display = isHoliday ? 'none' : 'flex';
+            document.getElementById('locationField').style.display = isHoliday ? 'none' : 'flex';
+            document.getElementById('machineField').style.display = isHoliday ? 'none' : 'flex';
+            document.getElementById('operationField').style.display = isHoliday ? 'none' : 'flex';
+        }
+
+        // 更新編輯字段為標籤選項：未選取＝白底色框，選取後＝實心色塊按鈕
         function updateEditField(field, value, options) {
             const container = document.getElementById('options_' + field);
             container.innerHTML = '';
 
             options.forEach(opt => {
+                const color = getFieldColor(field, opt);
+                const isSelected = opt === value;
+
                 const tag = document.createElement('span');
-                tag.className = 'edit-tag-option';
+                tag.className = 'edit-tag-option' + (isSelected ? ' selected' : '');
                 tag.textContent = opt;
-                if (opt === value) tag.classList.add('selected');
-                tag.onclick = () => selectField(field, opt);
-                
-                // 設置背景顏色
-                if (field === 'calendarType') {
-                    tag.style.background = '#888';
-                } else if (field === 'shift') {
-                    tag.style.background = 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)';
-                } else if (field === 'location') {
-                    tag.style.background = 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)';
-                } else if (field === 'machine') {
-                    tag.style.background = 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)';
-                } else if (field === 'operation') {
-                    tag.style.background = 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)';
-                }
-                
+                tag.style.borderColor = color.base;
+                tag.style.color = isSelected ? 'white' : color.base;
+                tag.style.background = isSelected ? color.gradient : 'white';
+                // 再次點選已選取的項目可取消選取
+                tag.onclick = () => selectField(field, isSelected ? '' : opt);
+
                 container.appendChild(tag);
             });
         }
@@ -891,42 +876,29 @@
             if (!scheduleData[selectedDate]) {
                 scheduleData[selectedDate] = {};
             }
-            scheduleData[selectedDate][field] = value;
+            if (value) {
+                scheduleData[selectedDate][field] = value;
+            } else {
+                delete scheduleData[selectedDate][field];
+            }
 
-            // 如果改變了行事曆別，可能需要隱藏字段
             if (field === 'calendarType') {
-                const isHoliday = value === '例假日';
-                document.getElementById('shiftField').style.display = isHoliday ? 'none' : 'flex';
-                document.getElementById('locationField').style.display = isHoliday ? 'none' : 'flex';
-                document.getElementById('machineField').style.display = isHoliday ? 'none' : 'flex';
-                document.getElementById('operationField').style.display = isHoliday ? 'none' : 'flex';
+                updateFieldVisibility(value);
 
-                if (isHoliday) {
+                if (value === '例假日') {
                     delete scheduleData[selectedDate].shift;
                     delete scheduleData[selectedDate].location;
                     delete scheduleData[selectedDate].machine;
                     delete scheduleData[selectedDate].operation;
-                    
-                    // 更新這些字段的顯示
+
                     updateEditField('shift', '', shiftTimes);
                     updateEditField('location', '', baseLocations);
                     updateEditField('machine', '', machines);
                     updateEditField('operation', '', operations);
                 }
-
-                // 更新行事曆別標籤顏色
-                const calendarOptions = document.getElementById('options_calendarType');
-                const tags = calendarOptions.querySelectorAll('.edit-tag-option');
-                tags.forEach(tag => {
-                    const tagValue = tag.textContent;
-                    if (tagValue === '工作日') tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
-                    else if (tagValue === '休息日') tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
-                    else if (tagValue === '例假日') tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
-                    else if (tagValue === '國定假日') tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
-                });
             }
 
-            updateEditField(field, value, field === 'calendarType' ? calendarTypes : field === 'shift' ? shiftTimes : field === 'location' ? baseLocations : field === 'machine' ? machines : operations);
+            updateEditField(field, value, FIELD_OPTIONS[field]);
         }
 
         // 複製貼上
