@@ -1277,6 +1277,7 @@
             }
 
             fitCalendarTypeLabels();
+            fitTwoLineFields();
         }
 
         function isToday(y, m, d) {
@@ -1322,7 +1323,10 @@
                 ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(field => {
                     if (!data[field]) return;
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag' + (field === 'calendarType' ? ' tag-caltype' : '');
+                    let extraClass = '';
+                    if (field === 'calendarType') extraClass = ' tag-caltype';
+                    else if (field === 'location' || field === 'operation') extraClass = ' tag-twoline';
+                    tag.className = 'calendar-tag' + extraClass;
                     tag.style.background = getFieldColor(field, data[field]).base;
                     tag.textContent = data[field];
                     content.appendChild(tag);
@@ -1353,6 +1357,30 @@
                 const minSize = 6;
                 tag.style.whiteSpace = 'nowrap';
                 while (tag.scrollWidth > tag.clientWidth && size > minSize) {
+                    size -= 0.5;
+                    tag.style.fontSize = size + 'px';
+                }
+            });
+        }
+
+        // 讓「地點」「內容」標籤最多顯示兩行：一行內容就維持一行的高度，
+        // 超過兩行才縮小字級，並把高度鎖在（縮小前）兩行的高度，不會再往下長
+        function fitTwoLineFields() {
+            document.querySelectorAll('.calendar-tag.tag-twoline').forEach(tag => {
+                const cs = getComputedStyle(tag);
+                const lineHeightPx = parseFloat(cs.lineHeight);
+                const paddingV = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+                const twoLineHeight = lineHeightPx * 2 + paddingV;
+
+                // 一行或剛好兩行都不用處理，讓內容自然決定高度
+                if (tag.scrollHeight <= twoLineHeight + 0.5) return;
+
+                tag.style.maxHeight = twoLineHeight + 'px';
+                tag.style.overflow = 'hidden';
+
+                let size = parseFloat(cs.fontSize);
+                const minSize = 6;
+                while (tag.scrollHeight > twoLineHeight + 0.5 && size > minSize) {
                     size -= 0.5;
                     tag.style.fontSize = size + 'px';
                 }
@@ -1677,8 +1705,21 @@
         }
 
         // 儲存成功後，提醒有差異的班別（不影響已完成的儲存）
+        // 例假日可以多排、不能少排：例假日多排時，只要休息日+例假日的合計跟應排合計一致
+        // （代表只是把一天休息日排成例假日），這兩項就不算差異；其他情況都要提醒。
         function showSaveReminder() {
-            const diffRows = computeStats().filter(r => r.expected !== r.actual);
+            const stats = computeStats();
+            const restRow = stats.find(r => r.label === '休息日');
+            const holidayRow = stats.find(r => r.label === '例假日');
+            const isAllowedSwap = holidayRow && restRow &&
+                holidayRow.actual > holidayRow.expected &&
+                (restRow.actual + holidayRow.actual) === (restRow.expected + holidayRow.expected);
+
+            const diffRows = stats.filter(r => {
+                if (r.expected === r.actual) return false;
+                if (isAllowedSwap && (r.label === '休息日' || r.label === '例假日')) return false;
+                return true;
+            });
             if (diffRows.length === 0) return;
 
             document.getElementById('reminderList').innerHTML = diffRows.map(r =>
