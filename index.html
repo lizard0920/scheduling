@@ -933,9 +933,13 @@
             </div>
         </div>
 
-        <!-- 年/月/社員編號：不凍結 -->
+        <!-- 社員編號/年/月：不凍結 -->
         <div class="control-section unfrozen-row">
             <div class="row">
+                <div class="form-group">
+                    <label>社員編號</label>
+                    <input type="text" id="employeeId" placeholder="選擇社員編號">
+                </div>
                 <div class="form-group compact">
                     <label>年</label>
                     <select id="yearSelect" onchange="loadCalendar()"></select>
@@ -943,10 +947,6 @@
                 <div class="form-group compact">
                     <label>月</label>
                     <select id="monthSelect" onchange="loadCalendar()"></select>
-                </div>
-                <div class="form-group">
-                    <label>社員編號</label>
-                    <input type="text" id="employeeId" placeholder="選擇社員編號">
                 </div>
             </div>
         </div>
@@ -1174,7 +1174,7 @@
             const suggestions = document.createElement('div');
             suggestions.className = 'employee-dropdown';
             suggestions.id = 'employeeSuggestions';
-            suggestions.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #d5dce0;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;max-height:200px;overflow-y:auto;display:none;';
+            suggestions.style.cssText = 'position:absolute;top:100%;left:0;background:white;border:1px solid #d5dce0;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;max-height:200px;overflow-y:auto;display:none;';
             
             ROSTER.forEach(r => {
                 const item = document.createElement('div');
@@ -1190,6 +1190,8 @@
 
             input.parentElement.style.position = 'relative';
             input.parentElement.appendChild(suggestions);
+            // 下拉選單寬度直接對齊輸入框本身的實際寬度，避免跟著外層容器跑版
+            suggestions.style.width = input.offsetWidth + 'px';
 
             input.addEventListener('focus', () => {
                 suggestions.style.display = 'block';
