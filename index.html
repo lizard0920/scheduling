@@ -1339,9 +1339,16 @@
         }
 
         // 讓「行事曆別」標籤（工作日/休息日/例假日/國定假日）在任何手機寬度下都只顯示一行，
-        // 字太寬就自動縮小字級，桌機因為欄位夠寬本來就不會觸發縮小
+        // 字太寬就自動縮小字級，桌機因為欄位夠寬本來就不會觸發縮小。
+        // 縮小字級前先記住原本的高度並鎖住，這樣格子本身的視覺大小不會跟著縮小。
         function fitCalendarTypeLabels() {
             document.querySelectorAll('.calendar-tag.tag-caltype').forEach(tag => {
+                const naturalHeight = tag.getBoundingClientRect().height;
+                tag.style.minHeight = naturalHeight + 'px';
+                tag.style.display = 'flex';
+                tag.style.alignItems = 'center';
+                tag.style.justifyContent = 'center';
+
                 let size = parseFloat(getComputedStyle(tag).fontSize);
                 const minSize = 6;
                 tag.style.whiteSpace = 'nowrap';
