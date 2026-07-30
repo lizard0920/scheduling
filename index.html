@@ -369,6 +369,26 @@
             color: #34495e;
         }
 
+        .edit-field-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .field-filter-input {
+            width: 110px;
+            padding: 5px 10px;
+            border: 1px solid #d5dce0;
+            border-radius: 14px;
+            font-size: 12px;
+        }
+
+        .field-filter-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
         .edit-field.field-error {
             outline: 2px solid #ff6b6b;
             outline-offset: 6px;
@@ -401,7 +421,6 @@
 
         .edit-tag-option.selected {
             color: white !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
         .edit-toolbar {
@@ -960,19 +979,31 @@
                     <div class="edit-field-options" id="options_calendarType"></div>
                 </div>
                 <div class="edit-field" id="shiftField" style="display:none;">
-                    <label>班別</label>
+                    <div class="edit-field-label-row">
+                        <label>班別</label>
+                        <input type="text" class="field-filter-input" id="filter_shift" placeholder="輸入篩選" oninput="filterFieldOptions('shift', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_shift" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
                 <div class="edit-field" id="locationField" style="display:none;">
-                    <label>地點</label>
+                    <div class="edit-field-label-row">
+                        <label>地點</label>
+                        <input type="text" class="field-filter-input" id="filter_location" placeholder="輸入篩選" oninput="filterFieldOptions('location', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_location"></div>
                 </div>
                 <div class="edit-field" id="machineField" style="display:none;">
-                    <label>機台</label>
+                    <div class="edit-field-label-row">
+                        <label>機台</label>
+                        <input type="text" class="field-filter-input" id="filter_machine" placeholder="輸入篩選" oninput="filterFieldOptions('machine', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_machine" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
                 <div class="edit-field" id="operationField" style="display:none;">
-                    <label>內容</label>
+                    <div class="edit-field-label-row">
+                        <label>內容</label>
+                        <input type="text" class="field-filter-input" id="filter_operation" placeholder="輸入篩選" oninput="filterFieldOptions('operation', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_operation" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
             </div>
@@ -1038,7 +1069,7 @@
             {"name": "許博壹", "code": "S0193"}
         ];
 
-        const calendarTypes = ['工作日', '休息日', '例假日', '國定假日', '請假'];
+        const calendarTypes = ['工作日', '休息日', '例假日', '國定假日'];
         const shiftTimes = ['0800', '0830', '0900', '0930', '1000', '1030', '1100', '1130', '1200', '1230', '1300', '1330', '1400', '1430', '1500', '1530', '1600', '1630', '1700', '1730', '1800', '1830', '1900', '1930', '2000', '2030', '2100', '2130', '2200', '2230', '2300', '2330', '0000', '0030', '0100', '0130', '0200', '0230', '0300', '0330', '0400', '0430', '0500', '0530', '0600', '0630', '0700', '0730'];
         const baseLocations = ['(台灣)台中', '(台灣)台南', '(台灣)新竹', '(台灣)高雄', '(台灣)林口', '(台灣)苗栗', '(台灣)后里', '(台灣)桃園', '(台灣)台北', '(台灣)新北', '(台灣)嘉義', '日本', '(海外)美國', '(海外)新加坡', '(海外)中國', '(海外)韓國', '(海外)愛爾蘭'];
         let machines = ['無', 'CT-Z', 'CT-V', 'CT-Q', 'CT-K', 'CT-N', 'CT-KK', 'CT-DC', 'CT-KSQ', 'CT-E'];
@@ -1049,8 +1080,7 @@
             '工作日': { base: '#81c3e8' },
             '休息日': { base: '#81d89f' },
             '例假日': { base: '#ff6666' },
-            '國定假日': { base: '#ff99cc' },
-            '請假': { base: '#64b5f6' }
+            '國定假日': { base: '#ff99cc' }
         };
         const FIELD_COLOR = {
             shift: { base: '#2c3e50' },
@@ -1405,6 +1435,11 @@
 
             document.getElementById('editDateTitle').textContent = dateStr;
 
+            ['shift', 'location', 'machine', 'operation'].forEach(field => {
+                const filterInput = document.getElementById('filter_' + field);
+                if (filterInput) filterInput.value = '';
+            });
+
             Object.keys(FIELD_OPTIONS).forEach(field => {
                 updateEditField(field, data[field] || '', FIELD_OPTIONS[field]);
                 setFieldErrorState(field, false);
@@ -1456,6 +1491,22 @@
                 tag.onclick = () => selectField(field, isSelected ? '' : opt);
 
                 container.appendChild(tag);
+            });
+
+            // 重新渲染後，維持原本輸入的篩選文字
+            const filterInput = document.getElementById('filter_' + field);
+            if (filterInput && filterInput.value) {
+                filterFieldOptions(field, filterInput.value);
+            }
+        }
+
+        // 依輸入文字即時篩選班別/地點/機台/內容的選項（不影響已選取的狀態，只是隱藏不符合的選項）
+        function filterFieldOptions(field, query) {
+            const container = document.getElementById('options_' + field);
+            const q = query.trim().toLowerCase();
+            container.querySelectorAll('.edit-tag-option').forEach(el => {
+                const match = !q || el.textContent.toLowerCase().includes(q);
+                el.style.display = match ? 'inline-block' : 'none';
             });
         }
 
@@ -1607,7 +1658,7 @@
 
         // 單日資料驗證規則（全頁儲存與編輯區塊儲存共用同一套規則）：
         // (1) 選例假日：其他四格不需選擇
-        // (2) 選休息日/國定假日/請假：其他四格全部空白可以，但只選了一部分就算錯誤
+        // (2) 選休息日/國定假日：其他四格全部空白可以，但只選了一部分就算錯誤
         // (3) 五格都空白可以
         // (4) 選工作日：其他四格一定要全選
         // (5) 選了其他四格中任一格，但沒選行事曆別，也算錯誤
@@ -1637,7 +1688,7 @@
                 return { message: null, missingFields: [] };
             }
 
-            // 休息日 / 國定假日 / 請假：全部選擇或全部空白
+            // 休息日 / 國定假日：全部選擇或全部空白
             if (filled.length > 0 && filled.length < 4) {
                 return { message: `${dateStr} 資訊不完整`, missingFields: missing };
             }
