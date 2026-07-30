@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.25, maximum-scale=5.0, user-scalable=yes">
     <title>工程師排班管理系統 - 日曆版</title>
     <style>
         * {
@@ -82,6 +82,7 @@
         .control-section .row {
             display: grid;
             grid-template-columns: auto auto auto;
+            justify-content: start;
             gap: 10px;
         }
 
@@ -115,6 +116,8 @@
             border: 1px solid #d5dce0;
             border-radius: 4px;
             font-size: 13px;
+            background-color: #ffffff;
+            color: #2c3e50;
         }
 
         .saved-badge {
@@ -260,6 +263,13 @@
             text-align: center;
             white-space: normal;
             word-break: break-word;
+        }
+
+        /* 行事曆別標籤固定不換行，字級由 JS 依實際寬度自動縮小 */
+        .calendar-tag.tag-caltype {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* 長按複製／點兩下貼上的短暫回饋 */
@@ -1265,6 +1275,8 @@
             for (let d = 1; d <= remainingCells; d++) {
                 addDayElement(calendar, m < 12 ? y : y + 1, m < 12 ? m + 1 : 1, d, true);
             }
+
+            fitCalendarTypeLabels();
         }
 
         function isToday(y, m, d) {
@@ -1310,7 +1322,7 @@
                 ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(field => {
                     if (!data[field]) return;
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
+                    tag.className = 'calendar-tag' + (field === 'calendarType' ? ' tag-caltype' : '');
                     tag.style.background = getFieldColor(field, data[field]).base;
                     tag.textContent = data[field];
                     content.appendChild(tag);
@@ -1324,6 +1336,20 @@
             }
 
             calendar.appendChild(dayEl);
+        }
+
+        // 讓「行事曆別」標籤（工作日/休息日/例假日/國定假日）在任何手機寬度下都只顯示一行，
+        // 字太寬就自動縮小字級，桌機因為欄位夠寬本來就不會觸發縮小
+        function fitCalendarTypeLabels() {
+            document.querySelectorAll('.calendar-tag.tag-caltype').forEach(tag => {
+                let size = parseFloat(getComputedStyle(tag).fontSize);
+                const minSize = 6;
+                tag.style.whiteSpace = 'nowrap';
+                while (tag.scrollWidth > tag.clientWidth && size > minSize) {
+                    size -= 0.5;
+                    tag.style.fontSize = size + 'px';
+                }
+            });
         }
 
         // 短暫顯示在日期格上的回饋文字（例如「已複製」）
@@ -1355,7 +1381,7 @@
             setTimeout(() => loadCalendar(), 500);
         }
 
-        // 單日格子的互動：單擊＝開啟編輯、長按＝複製、快速點兩下＝貼上
+        // 單日格子的互動：單擊＝開啟編輯、快速點兩下＝複製、長按＝貼上
         const LONG_PRESS_MS = 550;
         const DOUBLE_TAP_MS = 320;
         const MOVE_CANCEL_PX = 10;
@@ -1381,7 +1407,7 @@
                 clearPressTimer();
                 pressTimer = setTimeout(() => {
                     longPressTriggered = true;
-                    copyDayWithFeedback(dateStr, dayEl);
+                    pasteDayWithFeedback(dateStr, dayEl);
                 }, LONG_PRESS_MS);
             });
 
@@ -1402,10 +1428,10 @@
                 if (moved) return;
 
                 if (pendingClickTimer) {
-                    // 短時間內第二次點擊 = 點兩下貼上
+                    // 短時間內第二次點擊 = 點兩下複製
                     clearTimeout(pendingClickTimer);
                     pendingClickTimer = null;
-                    pasteDayWithFeedback(dateStr, dayEl);
+                    copyDayWithFeedback(dateStr, dayEl);
                 } else {
                     pendingClickTimer = setTimeout(() => {
                         pendingClickTimer = null;
