@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            background: #eef0f2;
             color: #2c3e50;
             padding: 0;
             min-height: 100vh;
@@ -27,7 +27,7 @@
 
         /* 控制面板 */
         .control-panel {
-            background: linear-gradient(to bottom, #ffffff, #f8fafb);
+            background: #ffffff;
             border-bottom: 1px solid #e0e3e8;
             position: sticky;
             top: 0;
@@ -65,23 +65,23 @@
         }
 
         .action-buttons button:first-child {
-            background: linear-gradient(135deg, #48c774 0%, #1abc9c 100%);
+            background: #1abc9c;
             color: white;
         }
 
         .action-buttons button:nth-child(2) {
-            background: linear-gradient(135deg, #af7ac5 0%, #8e44ad 100%);
+            background: #8e44ad;
             color: white;
         }
 
         .action-buttons button:nth-child(3) {
-            background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+            background: #3498db;
             color: white;
         }
 
         .control-section .row {
             display: grid;
-            grid-template-columns: 1fr auto auto;
+            grid-template-columns: auto auto 1fr;
             gap: 10px;
         }
 
@@ -96,6 +96,10 @@
 
         #monthSelect {
             width: 56px;
+        }
+
+        #employeeId {
+            width: 130px;
         }
 
         .form-group label {
@@ -169,6 +173,10 @@
             overflow: hidden;
             position: relative;
             min-height: 76px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
         }
 
         .calendar-day:hover {
@@ -252,6 +260,31 @@
             text-align: center;
             white-space: normal;
             word-break: break-word;
+        }
+
+        /* 長按複製／點兩下貼上的短暫回饋 */
+        .day-feedback-badge {
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.78);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 10px;
+            z-index: 5;
+            pointer-events: none;
+            white-space: nowrap;
+            animation: dayFeedbackFade 0.7s ease forwards;
+        }
+
+        @keyframes dayFeedbackFade {
+            0% { opacity: 0; }
+            15% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
         }
 
         /* 編輯面板 */
@@ -399,7 +432,7 @@
         }
 
         .edit-toolbar .action-btn.save {
-            background: linear-gradient(135deg, #48c774 0%, #1abc9c 100%);
+            background: #1abc9c;
             color: white;
         }
 
@@ -417,7 +450,7 @@
         }
 
         .edit-toolbar .action-btn.copy {
-            background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+            background: #3498db;
             color: white;
         }
 
@@ -674,7 +707,7 @@
             font-size: 15px;
             font-weight: 700;
             color: white;
-            background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+            background: #3498db;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -881,13 +914,9 @@
             </div>
         </div>
 
-        <!-- 社員編號/年/月：不凍結 -->
+        <!-- 年/月/社員編號：不凍結 -->
         <div class="control-section unfrozen-row">
             <div class="row">
-                <div class="form-group">
-                    <label>社員編號</label>
-                    <input type="text" id="employeeId" placeholder="選擇社員編號">
-                </div>
                 <div class="form-group compact">
                     <label>年</label>
                     <select id="yearSelect" onchange="loadCalendar()"></select>
@@ -895,6 +924,10 @@
                 <div class="form-group compact">
                     <label>月</label>
                     <select id="monthSelect" onchange="loadCalendar()"></select>
+                </div>
+                <div class="form-group">
+                    <label>社員編號</label>
+                    <input type="text" id="employeeId" placeholder="選擇社員編號">
                 </div>
             </div>
         </div>
@@ -1011,24 +1044,24 @@
         let machines = ['無', 'CT-Z', 'CT-V', 'CT-Q', 'CT-K', 'CT-N', 'CT-KK', 'CT-DC', 'CT-KSQ', 'CT-E'];
         let operations = ['待機', '移動/事務處理', '事務處理', '教育/研修', 'HOOK', 'Troubleshooting', '準備/書類/場勘', '會議', '清機', 'Process', 'HARD', '安全巡視'];
 
-        // 各欄位顏色（曆別依值而定，其餘欄位固定色）
+        // 各欄位顏色（曆別依值而定，其餘欄位固定色；統一用純色，不使用漸層）
         const CALENDAR_TYPE_COLOR = {
-            '工作日': { base: '#81c3e8', gradient: 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)' },
-            '休息日': { base: '#81d89f', gradient: 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)' },
-            '例假日': { base: '#ff6666', gradient: 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)' },
-            '國定假日': { base: '#ff99cc', gradient: 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)' },
-            '請假': { base: '#64b5f6', gradient: 'linear-gradient(135deg, #90caf9 0%, #64b5f6 100%)' }
+            '工作日': { base: '#81c3e8' },
+            '休息日': { base: '#81d89f' },
+            '例假日': { base: '#ff6666' },
+            '國定假日': { base: '#ff99cc' },
+            '請假': { base: '#64b5f6' }
         };
         const FIELD_COLOR = {
-            shift: { base: '#2c3e50', gradient: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)' },
-            location: { base: '#3498db', gradient: 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)' },
-            machine: { base: '#ff69b4', gradient: 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)' },
-            operation: { base: '#1abc9c', gradient: 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)' }
+            shift: { base: '#2c3e50' },
+            location: { base: '#3498db' },
+            machine: { base: '#ff69b4' },
+            operation: { base: '#1abc9c' }
         };
 
         function getFieldColor(field, value) {
             if (field === 'calendarType') {
-                return CALENDAR_TYPE_COLOR[value] || { base: '#888', gradient: '#888' };
+                return CALENDAR_TYPE_COLOR[value] || { base: '#888' };
             }
             return FIELD_COLOR[field];
         }
@@ -1246,7 +1279,7 @@
                     if (!data[field]) return;
                     const tag = document.createElement('span');
                     tag.className = 'calendar-tag';
-                    tag.style.background = getFieldColor(field, data[field]).gradient;
+                    tag.style.background = getFieldColor(field, data[field]).base;
                     tag.textContent = data[field];
                     content.appendChild(tag);
                 });
@@ -1254,13 +1287,102 @@
                 dayEl.appendChild(content);
             }
 
-            dayEl.onclick = () => {
-                if (!isOtherMonth) {
-                    openEditModal(dateStr);
+            if (!isOtherMonth) {
+                attachDayInteractions(dayEl, dateStr);
+            }
+
+            calendar.appendChild(dayEl);
+        }
+
+        // 短暫顯示在日期格上的回饋文字（例如「已複製」）
+        function showCellFeedback(dayEl, text) {
+            const badge = document.createElement('div');
+            badge.className = 'day-feedback-badge';
+            badge.textContent = text;
+            dayEl.appendChild(badge);
+            setTimeout(() => badge.remove(), 700);
+        }
+
+        function copyDayWithFeedback(dateStr, dayEl) {
+            if (!scheduleData[dateStr] || isDayEmpty(dateStr)) {
+                showCellFeedback(dayEl, '沒有資料可複製');
+                return;
+            }
+            clipboard = JSON.parse(JSON.stringify(scheduleData[dateStr]));
+            showCellFeedback(dayEl, '✓ 已複製');
+        }
+
+        function pasteDayWithFeedback(dateStr, dayEl) {
+            if (!clipboard) {
+                showCellFeedback(dayEl, '尚未複製資料');
+                return;
+            }
+            scheduleData[dateStr] = JSON.parse(JSON.stringify(clipboard));
+            markUnsaved();
+            showCellFeedback(dayEl, '✓ 已貼上');
+            setTimeout(() => loadCalendar(), 500);
+        }
+
+        // 單日格子的互動：單擊＝開啟編輯、長按＝複製、快速點兩下＝貼上
+        const LONG_PRESS_MS = 550;
+        const DOUBLE_TAP_MS = 320;
+        const MOVE_CANCEL_PX = 10;
+
+        function attachDayInteractions(dayEl, dateStr) {
+            let pressTimer = null;
+            let longPressTriggered = false;
+            let startX = 0, startY = 0, moved = false;
+            let pendingClickTimer = null;
+
+            const clearPressTimer = () => {
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
                 }
             };
 
-            calendar.appendChild(dayEl);
+            dayEl.addEventListener('pointerdown', (e) => {
+                longPressTriggered = false;
+                moved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+                clearPressTimer();
+                pressTimer = setTimeout(() => {
+                    longPressTriggered = true;
+                    copyDayWithFeedback(dateStr, dayEl);
+                }, LONG_PRESS_MS);
+            });
+
+            dayEl.addEventListener('pointermove', (e) => {
+                if (Math.abs(e.clientX - startX) > MOVE_CANCEL_PX || Math.abs(e.clientY - startY) > MOVE_CANCEL_PX) {
+                    moved = true;
+                    clearPressTimer();
+                }
+            });
+
+            dayEl.addEventListener('pointerup', () => {
+                clearPressTimer();
+
+                if (longPressTriggered) {
+                    longPressTriggered = false;
+                    return;
+                }
+                if (moved) return;
+
+                if (pendingClickTimer) {
+                    // 短時間內第二次點擊 = 點兩下貼上
+                    clearTimeout(pendingClickTimer);
+                    pendingClickTimer = null;
+                    pasteDayWithFeedback(dateStr, dayEl);
+                } else {
+                    pendingClickTimer = setTimeout(() => {
+                        pendingClickTimer = null;
+                        openEditModal(dateStr);
+                    }, DOUBLE_TAP_MS);
+                }
+            });
+
+            dayEl.addEventListener('pointercancel', clearPressTimer);
         }
 
         // 工具函數
@@ -1329,7 +1451,7 @@
                 tag.textContent = opt;
                 tag.style.borderColor = color.base;
                 tag.style.color = isSelected ? 'white' : color.base;
-                tag.style.background = isSelected ? color.gradient : 'white';
+                tag.style.background = isSelected ? color.base : 'white';
                 // 再次點選已選取的項目可取消選取
                 tag.onclick = () => selectField(field, isSelected ? '' : opt);
 
