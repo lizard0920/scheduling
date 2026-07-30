@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工程師排班管理系統 - 日曆版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.25, maximum-scale=5.0, user-scalable=yes">
+    <title>排班管理系統</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            background: #eef0f2;
             color: #2c3e50;
             padding: 0;
             min-height: 100vh;
@@ -27,7 +27,7 @@
 
         /* 控制面板 */
         .control-panel {
-            background: linear-gradient(to bottom, #ffffff, #f8fafb);
+            background: #ffffff;
             border-bottom: 1px solid #e0e3e8;
             position: sticky;
             top: 0;
@@ -41,6 +41,10 @@
 
         .control-section {
             margin-bottom: 10px;
+        }
+
+        .unfrozen-row {
+            padding-top: 12px;
         }
 
         .action-buttons {
@@ -61,24 +65,42 @@
         }
 
         .action-buttons button:first-child {
-            background: linear-gradient(135deg, #48c774 0%, #1abc9c 100%);
+            background: #1abc9c;
             color: white;
         }
 
         .action-buttons button:nth-child(2) {
-            background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+            background: #8e44ad;
+            color: white;
+        }
+
+        .action-buttons button:nth-child(3) {
+            background: #3498db;
             color: white;
         }
 
         .control-section .row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: auto auto auto;
+            justify-content: start;
             gap: 10px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
+        }
+
+        #yearSelect {
+            width: 82px;
+        }
+
+        #monthSelect {
+            width: 56px;
+        }
+
+        #employeeId {
+            width: 130px;
         }
 
         .form-group label {
@@ -94,6 +116,8 @@
             border: 1px solid #d5dce0;
             border-radius: 4px;
             font-size: 13px;
+            background-color: #ffffff;
+            color: #2c3e50;
         }
 
         .saved-badge {
@@ -123,7 +147,9 @@
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
+            gap: 0;
+            border-top: 1px solid #eef0f2;
+            border-left: 1px solid #eef0f2;
         }
 
         .calendar-weekday {
@@ -131,52 +157,85 @@
             font-weight: 600;
             font-size: 12px;
             color: #666;
-            padding: 8px;
-            background: #f5f5f5;
-            border-radius: 4px;
+            padding: 8px 2px;
+            background: #fafbfc;
+            border-bottom: 2px solid #eef0f2;
         }
 
-        /* 日期卡片 */
+        /* 日期格 */
         .calendar-day {
-            aspect-ratio: 1;
             background: white;
-            border: 2px solid #e0e3e8;
-            border-radius: 8px;
-            padding: 8px;
+            border-right: 1px solid #eef0f2;
+            border-bottom: 1px solid #eef0f2;
+            padding: 6px 3px 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
             display: flex;
             flex-direction: column;
+            align-items: center;
             overflow: hidden;
             position: relative;
+            min-height: 76px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
         }
 
         .calendar-day:hover {
-            border-color: #3498db;
-            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
-            transform: translateY(-2px);
+            background: #f5faff;
         }
 
         .calendar-day.other-month {
-            background: #f9f9f9;
-            opacity: 0.5;
+            background: #fbfbfb;
         }
 
-        .calendar-day.has-data {
-            border-color: #1abc9c;
-            border-width: 2px;
+        .calendar-day.other-month .calendar-day-number,
+        .calendar-day.other-month .calendar-tag {
+            opacity: 0.35;
+        }
+
+        /* 選了行事曆別後，當天格子的底色（顏色比標籤淡，且跟標籤/選取色不同） */
+        .calendar-day.status-holiday {
+            background: #f5e6e3;
+        }
+
+        .calendar-day.status-restday {
+            background: #e6efe3;
+        }
+
+        .calendar-day.status-national {
+            background: #f2e3ec;
         }
 
         .calendar-day.selected {
-            background: #e3f2fd;
-            border-color: #3498db;
+            background: #eef7ff;
         }
 
         .calendar-day-number {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 4px;
+        }
+
+        .day-number-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .day-number-circle.today {
+            background: #4c8dff;
+            color: white;
+        }
+
+        .day-number-circle.active-day {
+            background: #bcdcff;
+            color: #1c4e8a;
         }
 
         .calendar-day.other-month .calendar-day-number {
@@ -185,7 +244,7 @@
 
         .calendar-day-content {
             font-size: 10px;
-            flex: 1;
+            width: 100%;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -193,35 +252,49 @@
         }
 
         .calendar-tag {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 10px;
+            display: block;
+            width: 100%;
+            padding: 2px 3px;
+            border-radius: 5px;
+            font-size: 9px;
+            line-height: 1.25;
             font-weight: 600;
             color: white;
+            text-align: center;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        /* 行事曆別標籤固定不換行，字級由 JS 依實際寬度自動縮小 */
+        .calendar-tag.tag-caltype {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .calendar-tag-calendar {
-            background: #888;
+        /* 長按複製／點兩下貼上的短暫回饋 */
+        .day-feedback-badge {
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.78);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 10px;
+            z-index: 5;
+            pointer-events: none;
+            white-space: nowrap;
+            animation: dayFeedbackFade 0.7s ease forwards;
         }
 
-        .calendar-tag-shift {
-            background: #2c3e50;
-        }
-
-        .calendar-tag-location {
-            background: #3498db;
-        }
-
-        .calendar-tag-machine {
-            background: #ff69b4;
-        }
-
-        .calendar-tag-operation {
-            background: #1abc9c;
+        @keyframes dayFeedbackFade {
+            0% { opacity: 0; }
+            15% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
         }
 
         /* 編輯面板 */
@@ -253,6 +326,13 @@
             to {
                 transform: translateY(0);
             }
+        }
+
+        .edit-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: white;
         }
 
         .edit-header {
@@ -299,10 +379,37 @@
             color: #34495e;
         }
 
+        .edit-field-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .field-filter-input {
+            width: 110px;
+            padding: 5px 10px;
+            border: 1px solid #d5dce0;
+            border-radius: 14px;
+            font-size: 12px;
+        }
+
+        .field-filter-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .edit-field.field-error {
+            outline: 2px solid #ff6b6b;
+            outline-offset: 6px;
+            border-radius: 10px;
+        }
+
         .edit-field-options {
             display: flex;
-            flex-direction: column;
-            gap: 6px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .edit-tag-option {
@@ -311,32 +418,31 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
-            color: white;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
+            background: white;
+            border: 2px solid;
+            transition: all 0.15s;
         }
 
         .edit-tag-option:hover {
             transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         .edit-tag-option.selected {
-            border-color: #333;
-            box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+            color: white !important;
         }
 
-        .edit-actions {
+        .edit-toolbar {
             display: flex;
-            gap: 10px;
-            padding: 16px;
-            border-top: 1px solid #e0e3e8;
+            gap: 8px;
+            padding: 10px 16px 14px;
+            border-bottom: 1px solid #e0e3e8;
         }
 
-        .edit-actions button {
+        .edit-toolbar button {
             flex: 1;
-            padding: 12px 16px;
+            padding: 10px 8px;
             border: none;
             border-radius: 6px;
             font-size: 13px;
@@ -345,22 +451,46 @@
             transition: all 0.2s;
         }
 
-        .edit-actions .action-btn {
+        .edit-toolbar .action-btn {
             background: #f0f0f0;
             color: #666;
         }
 
-        .edit-actions .action-btn:hover {
+        .edit-toolbar .action-btn:hover {
             background: #e0e0e0;
         }
 
-        .edit-actions .action-btn.clear {
+        .edit-toolbar .action-btn.save {
+            background: #1abc9c;
+            color: white;
+        }
+
+        .edit-toolbar .action-btn.save:hover {
+            filter: brightness(1.05);
+        }
+
+        .edit-toolbar .action-btn.clear {
             background: #ff6b6b;
             color: white;
         }
 
-        .edit-actions .action-btn.clear:hover {
+        .edit-toolbar .action-btn.clear:hover {
             background: #ee5a52;
+        }
+
+        .edit-toolbar .action-btn.copy {
+            background: #3498db;
+            color: white;
+        }
+
+        .edit-toolbar .action-btn.copy:hover {
+            filter: brightness(1.05);
+        }
+
+        /* 儲存/複製並儲存的短暫回饋動畫 */
+        .edit-toolbar .action-btn.btn-feedback {
+            transform: scale(1.06);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.25);
         }
 
         /* 錯誤模態 */
@@ -419,6 +549,223 @@
 
         .error-close-btn:hover {
             background: #ee5a52;
+        }
+
+        /* 統計模態 */
+        .stats-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .stats-modal.hidden {
+            display: none;
+        }
+
+        .stats-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .stats-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 16px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 8px 6px;
+            text-align: center;
+            border-bottom: 1px solid #eef0f2;
+        }
+
+        .stats-table th {
+            color: #666;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .stats-table th:first-child,
+        .stats-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .stats-close-btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stats-close-btn:hover {
+            background: #2f89c5;
+        }
+
+        /* 儲存後差異提醒（非錯誤，只是提醒，用琥珀色跟錯誤的紅色區隔） */
+        .reminder-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .reminder-modal.hidden {
+            display: none;
+        }
+
+        .reminder-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 400px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .reminder-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e67e22;
+            margin-bottom: 12px;
+        }
+
+        .reminder-item {
+            font-size: 13px;
+            color: #7a4a12;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+            background: #fff3cd;
+            border-left: 3px solid #f39c12;
+            border-radius: 4px;
+        }
+
+        .reminder-close-btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reminder-close-btn:hover {
+            background: #e08e0b;
+        }
+
+        /* 匯出Excel範圍選擇 */
+        .export-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .export-modal.hidden {
+            display: none;
+        }
+
+        .export-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .export-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 16px;
+        }
+
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .export-option-btn {
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            background: #3498db;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-option-btn span {
+            font-size: 12px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .export-option-btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .export-cancel-btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-cancel-btn:hover {
+            background: #e0e0e0;
         }
 
         /* 手機響應式 */
@@ -491,47 +838,125 @@
                 padding: 6px 10px;
             }
         }
+
+        /* 電腦（寬螢幕）：手機版樣式不變，這裡只針對較寬的螢幕放大字級並限制寬度 */
+        @media (min-width: 769px) {
+            .container {
+                max-width: 720px;
+                padding: 0 16px;
+            }
+
+            .action-buttons button {
+                font-size: 16px;
+                padding: 12px 20px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-group input,
+            .form-group select {
+                font-size: 15px;
+                padding: 10px 12px;
+            }
+
+            #yearSelect {
+                width: 100px;
+            }
+
+            #monthSelect {
+                width: 74px;
+            }
+
+            .calendar-section {
+                padding: 20px;
+            }
+
+            .calendar-title {
+                font-size: 22px;
+                margin-bottom: 20px;
+            }
+
+            .calendar-weekday {
+                font-size: 14px;
+                padding: 10px 4px;
+            }
+
+            .calendar-day {
+                min-height: 112px;
+                padding: 8px 6px 12px;
+            }
+
+            .calendar-day-number {
+                font-size: 16px;
+                margin-bottom: 6px;
+            }
+
+            .day-number-circle {
+                width: 30px;
+                height: 30px;
+            }
+
+            .calendar-day-content {
+                gap: 5px;
+            }
+
+            .calendar-tag {
+                font-size: 12px;
+                padding: 5px 6px;
+                border-radius: 6px;
+            }
+
+            .edit-modal {
+                align-items: center;
+                justify-content: center;
+            }
+
+            .edit-panel {
+                max-width: 480px;
+                width: 90%;
+                border-radius: 12px;
+                max-height: 85vh;
+            }
+
+            .edit-tag-option {
+                font-size: 14px;
+                padding: 9px 16px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 控制面板 -->
+        <!-- 控制面板（儲存/統計/匯出Excel 保持凍結） -->
         <div class="control-panel">
             <div class="control-content">
                 <div class="control-section">
                     <div class="action-buttons">
                         <button onclick="saveData()">💾 儲存</button>
+                        <button onclick="showStatsModal()">📈 統計</button>
                         <button onclick="exportExcel()">📊 匯出Excel</button>
                         <span id="savedStatus"></span>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="control-section">
-                    <div class="row">
-                        <div class="form-group">
-                            <label>社員編號</label>
-                            <input type="text" id="employeeId" placeholder="選擇社員編號">
-                        </div>
-                        <div class="form-group">
-                            <label>月份選擇</label>
-                            <select id="monthSelect" onchange="loadCalendar()">
-                                <option value="2026_7">2026年7月</option>
-                                <option value="2026_8">2026年8月</option>
-                                <option value="2026_9">2026年9月</option>
-                                <option value="2026_10">2026年10月</option>
-                                <option value="2026_11">2026年11月</option>
-                                <option value="2026_12">2026年12月</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>月份範圍</label>
-                            <select id="rangeSelect" onchange="loadCalendar()">
-                                <option value="1">上(1-15)</option>
-                                <option value="2">下(16-末)</option>
-                                <option value="3" selected>整月</option>
-                            </select>
-                        </div>
-                    </div>
+        <!-- 社員編號/年/月：不凍結 -->
+        <div class="control-section unfrozen-row">
+            <div class="row">
+                <div class="form-group">
+                    <label>社員編號</label>
+                    <input type="text" id="employeeId" placeholder="選擇社員編號">
+                </div>
+                <div class="form-group compact">
+                    <label>年</label>
+                    <select id="yearSelect" onchange="loadCalendar()"></select>
+                </div>
+                <div class="form-group compact">
+                    <label>月</label>
+                    <select id="monthSelect" onchange="loadCalendar()"></select>
                 </div>
             </div>
         </div>
@@ -544,38 +969,53 @@
     </div>
 
     <!-- 編輯面板 -->
-    <div class="edit-modal" id="editModal" style="display:none;" onclick="if(event.target === this) closeEditModal()">
+    <div class="edit-modal" id="editModal" style="display:none;" onclick="if(event.target === this) saveDayEdit()">
         <div class="edit-panel">
-            <div class="edit-header">
-                <span id="editDateTitle"></span>
-                <button class="close-btn" onclick="closeEditModal()">✕</button>
+            <div class="edit-sticky">
+                <div class="edit-header">
+                    <span id="editDateTitle"></span>
+                    <button class="close-btn" onclick="saveDayEdit()">✕</button>
+                </div>
+                <div class="edit-toolbar">
+                    <button class="action-btn save" onclick="saveDayEdit()">儲存</button>
+                    <button class="action-btn copy" onclick="copyAndSaveDayEdit()">複製並儲存</button>
+                    <button class="action-btn" onclick="pasteDate()">貼上</button>
+                    <button class="action-btn clear" onclick="clearDate()">✕</button>
+                </div>
             </div>
             <div class="edit-content">
-                <div class="edit-field">
+                <div class="edit-field" id="calendarTypeField">
                     <label>行事曆別</label>
                     <div class="edit-field-options" id="options_calendarType"></div>
                 </div>
                 <div class="edit-field" id="shiftField" style="display:none;">
-                    <label>班別</label>
+                    <div class="edit-field-label-row">
+                        <label>班別</label>
+                        <input type="text" class="field-filter-input" id="filter_shift" placeholder="輸入篩選" oninput="filterFieldOptions('shift', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_shift" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
                 <div class="edit-field" id="locationField" style="display:none;">
-                    <label>地點</label>
+                    <div class="edit-field-label-row">
+                        <label>地點</label>
+                        <input type="text" class="field-filter-input" id="filter_location" placeholder="輸入篩選" oninput="filterFieldOptions('location', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_location"></div>
                 </div>
                 <div class="edit-field" id="machineField" style="display:none;">
-                    <label>機台</label>
+                    <div class="edit-field-label-row">
+                        <label>機台</label>
+                        <input type="text" class="field-filter-input" id="filter_machine" placeholder="輸入篩選" oninput="filterFieldOptions('machine', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_machine" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
                 <div class="edit-field" id="operationField" style="display:none;">
-                    <label>內容</label>
+                    <div class="edit-field-label-row">
+                        <label>內容</label>
+                        <input type="text" class="field-filter-input" id="filter_operation" placeholder="輸入篩選" oninput="filterFieldOptions('operation', this.value)">
+                    </div>
                     <div class="edit-field-options" id="options_operation" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
-            </div>
-            <div class="edit-actions">
-                <button class="action-btn" onclick="copyDate()">複製</button>
-                <button class="action-btn" onclick="pasteDate()">貼上</button>
-                <button class="action-btn clear" onclick="clearDate()">✕</button>
             </div>
         </div>
     </div>
@@ -589,32 +1029,278 @@
         </div>
     </div>
 
+    <!-- 統計模態 -->
+    <div class="stats-modal hidden" id="statsModal" onclick="if(event.target === this) closeStatsModal()">
+        <div class="stats-content">
+            <div class="stats-title">📈 排班統計</div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>班別</th>
+                        <th>應排</th>
+                        <th>已排</th>
+                        <th>差異</th>
+                    </tr>
+                </thead>
+                <tbody id="statsTableBody"></tbody>
+            </table>
+            <button class="stats-close-btn" onclick="closeStatsModal()">關閉</button>
+        </div>
+    </div>
+
+    <!-- 儲存後差異提醒（不影響已完成的儲存） -->
+    <div class="reminder-modal hidden" id="reminderModal" onclick="if(event.target === this) closeReminderModal()">
+        <div class="reminder-content">
+            <div class="reminder-title">📋 排班差異提醒</div>
+            <div id="reminderList"></div>
+            <button class="reminder-close-btn" onclick="closeReminderModal()">關閉</button>
+        </div>
+    </div>
+
+    <!-- 匯出Excel範圍選擇 -->
+    <div class="export-modal hidden" id="exportModal" onclick="if(event.target === this) closeExportModal()">
+        <div class="export-content">
+            <div class="export-title">📊 選擇匯出範圍</div>
+            <div class="export-options">
+                <button class="export-option-btn" onclick="doExport(1)">上半月<br><span>1-15日</span></button>
+                <button class="export-option-btn" onclick="doExport(2)">下半月<br><span>16日-月底</span></button>
+                <button class="export-option-btn" onclick="doExport(3)">整月份</button>
+            </div>
+            <button class="export-cancel-btn" onclick="closeExportModal()">取消</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script>
         // 數據存儲
         const ROSTER = [
             {"name": "林宗翰", "code": "S0116"},
             {"name": "王詳閔", "code": "S0186"},
-            {"name": "許博壹", "code": "S0193"}
+            {"name": "許博壹", "code": "S0193"},
+            {"name": "梁瑄育", "code": "S0198"},
+            {"name": "郭俊佑", "code": "S0208"},
+{"name": "黃暐博", "code": "S0227"},
+{"name": "林資研", "code": "S0229"},
+{"name": "薛博撼", "code": "S0254"},
+{"name": "張瑀蘋", "code": "S0257"},
+{"name": "鄭義衍", "code": "S0271"},
+{"name": "侯信義", "code": "S0272"},
+{"name": "胡永丞", "code": "S0308"},
+{"name": "盧世銘", "code": "S0316"},
+{"name": "翁崧益", "code": "S0317"},
+{"name": "張晉銓", "code": "S0328"},
+{"name": "熊健智", "code": "S0360"},
+{"name": "王宏全", "code": "S0364"},
+{"name": "范彥庭", "code": "S0370"},
+{"name": "陳英平", "code": "S0375"},
+{"name": "劉凱楓", "code": "S0385"},
+{"name": "林思丞", "code": "S0405"},
+{"name": "施皓文", "code": "S0406"},
+{"name": "陳俊志", "code": "S0417"},
+{"name": "林彥錞", "code": "S0421"},
+{"name": "林晉樑", "code": "S0423"},
+{"name": "姚登雄", "code": "S0433"},
+{"name": "林志洋", "code": "S0434"},
+{"name": "黃瑞閔", "code": "S0435"},
+{"name": "鐘家源", "code": "S0447"},
+{"name": "卓子杰", "code": "S0452"},
+{"name": "潘佳威", "code": "S0455"},
+{"name": "池佳憲", "code": "S0461"},
+{"name": "涂哲維", "code": "S0476"},
+{"name": "吳育賢", "code": "S0477"},
+{"name": "陳閎程", "code": "S0479"},
+{"name": "林進德", "code": "S0512"},
+{"name": "張瑋辰", "code": "S0536"},
+{"name": "滕尚億", "code": "S0540"},
+{"name": "鐘允伸", "code": "S0546"},
+{"name": "王柏凱", "code": "S0548"},
+{"name": "楊儒閔", "code": "S0561"},
+{"name": "許盛強", "code": "S0569"},
+{"name": "賴建壹", "code": "S0575"},
+{"name": "劉松淵", "code": "S0577"},
+{"name": "李鎮安", "code": "S0579"},
+{"name": "張智閔", "code": "S0584"},
+{"name": "王子航", "code": "S0585"},
+{"name": "徐柏天", "code": "S0586"},
+{"name": "林睿勝", "code": "S0589"},
+{"name": "陳威廷", "code": "S0594"},
+{"name": "王昱中", "code": "S0606"},
+{"name": "衣藤忠", "code": "S0609"},
+{"name": "張峻豪", "code": "S0611"},
+{"name": "蕭鈺霖", "code": "S0615"},
+{"name": "羅振途", "code": "S0620"},
+{"name": "許瑋恩", "code": "S0630"},
+{"name": "游峻驊", "code": "S0639"},
+{"name": "粘博皓", "code": "S0641"},
+{"name": "陳秉瑞", "code": "S0642"},
+{"name": "李允軒", "code": "S0643"},
+{"name": "王華維", "code": "S0645"},
+{"name": "郭耀程", "code": "S0646"},
+{"name": "張右祥", "code": "S0648"},
+{"name": "黃敬哲", "code": "S0649"},
+{"name": "邱茗洋", "code": "S0650"},
+{"name": "鄭智銓", "code": "S0651"},
+{"name": "林祺淯", "code": "S0652"},
+{"name": "黎宥驊", "code": "S0661"},
+{"name": "張言隆", "code": "S0664"},
+{"name": "翁崧富", "code": "S0668"},
+{"name": "林品諺", "code": "S0672"},
+{"name": "李翊辰", "code": "S0673"},
+{"name": "吳宗淯", "code": "S0680"},
+{"name": "林韶楷", "code": "S0698"},
+{"name": "官志鴻", "code": "S0700"},
+{"name": "楊格灃", "code": "S0703"},
+{"name": "曹瑞清", "code": "S0706"},
+{"name": "張家瀚", "code": "S0707"},
+{"name": "楊淳猷", "code": "S0711"},
+{"name": "游智育", "code": "S0712"},
+{"name": "蔡宇軒", "code": "S0713"},
+{"name": "王偉權", "code": "S0714"},
+{"name": "顏昶胤", "code": "S0715"},
+{"name": "曾愛芸", "code": "S0716"},
+{"name": "葉承祐", "code": "S0717"},
+{"name": "陳佾蔚", "code": "S0718"},
+{"name": "陳約翰", "code": "S0725"},
+{"name": "陳昱積", "code": "S0726"},
+{"name": "吳亞萱", "code": "S0727"},
+{"name": "劉珈忻", "code": "S0728"},
+{"name": "許林傑", "code": "S0729"},
+{"name": "曾婉綺", "code": "S0730"},
+{"name": "戴君能", "code": "S0732"},
+{"name": "劉育秀", "code": "S0733"},
+{"name": "陳呂安", "code": "S0734"},
+{"name": "黃俊頴", "code": "S0736"},
+{"name": "廖偉竣", "code": "S0737"},
+{"name": "楊豫橙", "code": "S0738"},
+{"name": "林宗翰", "code": "S0740"},
+{"name": "吳鎧邑", "code": "S0742"},
+{"name": "林韋成", "code": "S0743"},
+{"name": "陳信憲", "code": "S0744"},
+{"name": "游盛翔", "code": "S0747"},
+{"name": "王崇祐", "code": "S0748"},
+{"name": "魏子淵", "code": "S0757"},
+{"name": "熊立閎", "code": "S0758"},
+{"name": "林承立", "code": "S0762"},
+{"name": "楊勝錡", "code": "S0768"},
+{"name": "李家興", "code": "S0769"},
+{"name": "黃冠儒", "code": "S0770"},
+{"name": "黃棣陽", "code": "S0777"},
+{"name": "范承豪", "code": "S0779"},
+{"name": "褚咏浄", "code": "S0780"},
+{"name": "楊松錡", "code": "S0781"},
+{"name": "邱韋", "code": "S0782"},
+{"name": "楊承穎", "code": "S0783"},
+{"name": "曹博皓", "code": "S0788"},
+{"name": "劉軒源", "code": "S0789"},
+{"name": "趙聖忠", "code": "S0790"},
+{"name": "鍾秉緯", "code": "S0792"},
+{"name": "黃奕琿", "code": "S0793"},
+{"name": "劉嘉聞", "code": "S0796"},
+{"name": "郭名澤", "code": "S0797"},
+{"name": "劉哲銘", "code": "S0798"},
+{"name": "鄭耀", "code": "S0799"},
+{"name": "江瑞捷", "code": "S0801"},
+{"name": "梁瑾", "code": "S0805"},
+{"name": "林政陽", "code": "S0810"},
+{"name": "莊智安", "code": "S0817"},
+{"name": "高敬恩", "code": "S0819"},
+{"name": "林宥勛", "code": "S0821"},
+{"name": "廖顯洲", "code": "S0822"},
+{"name": "王揚竣", "code": "S0823"},
+{"name": "洪儀潔", "code": "S0831"},
+{"name": "林柏榕", "code": "S0832"},
+{"name": "朱泳齊", "code": "S0833"},
+{"name": "余謙", "code": "S0837"},
+{"name": "邱稟皓", "code": "S0843"},
+{"name": "陳佳妮", "code": "S0844"},
+{"name": "曾羱豪", "code": "S0848"},
+{"name": "洪國智", "code": "S0850"},
+{"name": "許博修", "code": "S0851"},
+{"name": "黃于宸", "code": "S0852"},
+{"name": "陳韜宇", "code": "S0854"},
+{"name": "陳佳韓", "code": "S0860"}
+
+            
         ];
 
         const calendarTypes = ['工作日', '休息日', '例假日', '國定假日'];
         const shiftTimes = ['0800', '0830', '0900', '0930', '1000', '1030', '1100', '1130', '1200', '1230', '1300', '1330', '1400', '1430', '1500', '1530', '1600', '1630', '1700', '1730', '1800', '1830', '1900', '1930', '2000', '2030', '2100', '2130', '2200', '2230', '2300', '2330', '0000', '0030', '0100', '0130', '0200', '0230', '0300', '0330', '0400', '0430', '0500', '0530', '0600', '0630', '0700', '0730'];
-        const baseLocations = ['(台灣)台中', '(台灣)台南', '(台灣)高雄', '(海外)美國', '(海外)新加坡'];
+        const baseLocations = ['(台灣)台中', '(台灣)台南', '(台灣)新竹', '(台灣)高雄', '(台灣)林口', '(台灣)苗栗', '(台灣)后里', '(台灣)桃園', '(台灣)台北', '(台灣)新北', '(台灣)嘉義', '日本', '(海外)美國', '(海外)新加坡', '(海外)中國', '(海外)韓國', '(海外)愛爾蘭'];
         let machines = ['無', 'CT-Z', 'CT-V', 'CT-Q', 'CT-K', 'CT-N', 'CT-KK', 'CT-DC', 'CT-KSQ', 'CT-E'];
         let operations = ['待機', '移動/事務處理', '事務處理', '教育/研修', 'HOOK', 'Troubleshooting', '準備/書類/場勘', '會議', '清機', 'Process', 'HARD', '安全巡視'];
 
+        // 各欄位顏色（曆別依值而定，其餘欄位固定色；統一用純色，不使用漸層）
+        const CALENDAR_TYPE_COLOR = {
+            '工作日': { base: '#81c3e8' },
+            '休息日': { base: '#81d89f' },
+            '例假日': { base: '#ff6666' },
+            '國定假日': { base: '#ff99cc' }
+        };
+        const FIELD_COLOR = {
+            shift: { base: '#2c3e50' },
+            location: { base: '#3498db' },
+            machine: { base: '#ff69b4' },
+            operation: { base: '#1abc9c' }
+        };
+
+        function getFieldColor(field, value) {
+            if (field === 'calendarType') {
+                return CALENDAR_TYPE_COLOR[value] || { base: '#888' };
+            }
+            return FIELD_COLOR[field];
+        }
+
+        // 國定假日明細（依日期判斷屬於哪個月份）
+        let nationalHolidays = ['2026/09/25'];
+
         let scheduleData = {};
-        let currentMonth = '2026_7';
-        let currentRange = 3;
+        let currentYear = new Date().getFullYear();
+        let currentMonthNum = new Date().getMonth() + 1;
         let selectedDate = null;
         let clipboard = null;
+        let hasUnsavedChanges = false;
+
+        function markUnsaved() {
+            hasUnsavedChanges = true;
+        }
+
+        // 有未儲存的變更時，關閉分頁或重新整理會跳出瀏覽器內建的離開確認
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
             loadStorage();
             setupEmployeeDropdown();
+            populateYearMonthSelectors();
             loadCalendar();
         });
+
+        // 年/月選單（年份範圍隨當下年份自動往前後展開）
+        function populateYearMonthSelectors() {
+            const yearSelect = document.getElementById('yearSelect');
+            const monthSelect = document.getElementById('monthSelect');
+
+            for (let y = currentYear - 1; y <= currentYear + 3; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === currentYear) opt.selected = true;
+                yearSelect.appendChild(opt);
+            }
+
+            for (let m = 1; m <= 12; m++) {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                if (m === currentMonthNum) opt.selected = true;
+                monthSelect.appendChild(opt);
+            }
+        }
 
         // 儲存和加載
         function loadStorage() {
@@ -631,6 +1317,9 @@
 
             const savedOperations = localStorage.getItem('operations');
             if (savedOperations) operations = JSON.parse(savedOperations);
+
+            const savedHolidays = localStorage.getItem('nationalHolidays');
+            if (savedHolidays) nationalHolidays = JSON.parse(savedHolidays);
         }
 
         // 社員編號下拉菜單
@@ -639,7 +1328,7 @@
             const suggestions = document.createElement('div');
             suggestions.className = 'employee-dropdown';
             suggestions.id = 'employeeSuggestions';
-            suggestions.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #d5dce0;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;max-height:200px;overflow-y:auto;display:none;';
+            suggestions.style.cssText = 'position:absolute;top:100%;left:0;background:white;border:1px solid #d5dce0;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;max-height:200px;overflow-y:auto;display:none;';
             
             ROSTER.forEach(r => {
                 const item = document.createElement('div');
@@ -648,12 +1337,15 @@
                 item.onclick = () => {
                     input.value = `${r.code} ${r.name}`;
                     suggestions.style.display = 'none';
+                    markUnsaved();
                 };
                 suggestions.appendChild(item);
             });
 
             input.parentElement.style.position = 'relative';
             input.parentElement.appendChild(suggestions);
+            // 下拉選單寬度直接對齊輸入框本身的實際寬度，避免跟著外層容器跑版
+            suggestions.style.width = input.offsetWidth + 'px';
 
             input.addEventListener('focus', () => {
                 suggestions.style.display = 'block';
@@ -671,17 +1363,17 @@
                     item.style.display = item.textContent.toUpperCase().includes(val) ? 'block' : 'none';
                 });
                 suggestions.style.display = 'block';
+                markUnsaved();
             });
         }
 
         // 加載日曆
         function loadCalendar() {
-            currentMonth = document.getElementById('monthSelect').value;
-            currentRange = parseInt(document.getElementById('rangeSelect').value);
+            currentYear = parseInt(document.getElementById('yearSelect').value);
+            currentMonthNum = parseInt(document.getElementById('monthSelect').value);
 
-            const [year, month] = currentMonth.split('_');
-            const y = parseInt(year);
-            const m = parseInt(month);
+            const y = currentYear;
+            const m = currentMonthNum;
             const days = getDaysInMonth(y, m);
 
             // 更新標題
@@ -727,6 +1419,14 @@
             for (let d = 1; d <= remainingCells; d++) {
                 addDayElement(calendar, m < 12 ? y : y + 1, m < 12 ? m + 1 : 1, d, true);
             }
+
+            fitCalendarTypeLabels();
+            fitTwoLineFields();
+        }
+
+        function isToday(y, m, d) {
+            const now = new Date();
+            return now.getFullYear() === y && now.getMonth() + 1 === m && now.getDate() === d;
         }
 
         // 添加日期元素
@@ -741,74 +1441,185 @@
             if (hasData) dayEl.classList.add('has-data');
             if (selectedDate === dateStr) dayEl.classList.add('selected');
 
-            // 日期號碼
+            // 例假日/休息日/國定假日：當天格子套用對應底色
+            if (!isOtherMonth && data) {
+                if (data.calendarType === '例假日') dayEl.classList.add('status-holiday');
+                else if (data.calendarType === '休息日') dayEl.classList.add('status-restday');
+                else if (data.calendarType === '國定假日') dayEl.classList.add('status-national');
+            }
+
+            // 日期號碼（今天填滿藍色圓圈，選取中的日期淺藍圓圈）
             const dayNum = document.createElement('div');
             dayNum.className = 'calendar-day-number';
-            dayNum.textContent = d;
+            const dayCircle = document.createElement('span');
+            dayCircle.className = 'day-number-circle';
+            if (!isOtherMonth && isToday(y, m, d)) dayCircle.classList.add('today');
+            else if (selectedDate === dateStr) dayCircle.classList.add('active-day');
+            dayCircle.textContent = d;
+            dayNum.appendChild(dayCircle);
             dayEl.appendChild(dayNum);
 
-            // 內容
+            // 內容：曆別、班別、地點、機台、內容 五項全部顯示
             if (hasData && !isOtherMonth) {
                 const content = document.createElement('div');
                 content.className = 'calendar-day-content';
-                
-                if (data.calendarType) {
+
+                ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(field => {
+                    if (!data[field]) return;
                     const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.textContent = data.calendarType;
-                    
-                    // 根據行事曆別值設置顏色
-                    if (data.calendarType === '工作日') {
-                        tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
-                    } else if (data.calendarType === '休息日') {
-                        tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
-                    } else if (data.calendarType === '例假日') {
-                        tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
-                    } else if (data.calendarType === '國定假日') {
-                        tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
-                    }
-                    
+                    let extraClass = '';
+                    if (field === 'calendarType') extraClass = ' tag-caltype';
+                    else if (field === 'location' || field === 'operation') extraClass = ' tag-twoline';
+                    tag.className = 'calendar-tag' + extraClass;
+                    tag.style.background = getFieldColor(field, data[field]).base;
+                    tag.textContent = data[field];
                     content.appendChild(tag);
-                }
-                if (data.shift) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)';
-                    tag.textContent = data.shift;
-                    content.appendChild(tag);
-                }
-                if (data.location) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)';
-                    tag.textContent = data.location;
-                    content.appendChild(tag);
-                }
-                if (data.machine) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)';
-                    tag.textContent = data.machine;
-                    content.appendChild(tag);
-                }
-                if (data.operation) {
-                    const tag = document.createElement('span');
-                    tag.className = 'calendar-tag';
-                    tag.style.background = 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)';
-                    tag.textContent = data.operation;
-                    content.appendChild(tag);
-                }
+                });
 
                 dayEl.appendChild(content);
             }
 
-            dayEl.onclick = () => {
-                if (!isOtherMonth) {
-                    openEditModal(dateStr);
+            if (!isOtherMonth) {
+                attachDayInteractions(dayEl, dateStr);
+            }
+
+            calendar.appendChild(dayEl);
+        }
+
+        // 讓「行事曆別」標籤（工作日/休息日/例假日/國定假日）在任何手機寬度下都只顯示一行，
+        // 字太寬就自動縮小字級，桌機因為欄位夠寬本來就不會觸發縮小。
+        // 縮小字級前先記住原本的高度並鎖住，這樣格子本身的視覺大小不會跟著縮小。
+        function fitCalendarTypeLabels() {
+            document.querySelectorAll('.calendar-tag.tag-caltype').forEach(tag => {
+                const naturalHeight = tag.getBoundingClientRect().height;
+                tag.style.minHeight = naturalHeight + 'px';
+                tag.style.display = 'flex';
+                tag.style.alignItems = 'center';
+                tag.style.justifyContent = 'center';
+
+                let size = parseFloat(getComputedStyle(tag).fontSize);
+                const minSize = 6;
+                tag.style.whiteSpace = 'nowrap';
+                while (tag.scrollWidth > tag.clientWidth && size > minSize) {
+                    size -= 0.5;
+                    tag.style.fontSize = size + 'px';
+                }
+            });
+        }
+
+        // 讓「地點」「內容」標籤最多顯示兩行：一行內容就維持一行的高度，
+        // 超過兩行才縮小字級，並把高度鎖在（縮小前）兩行的高度，不會再往下長
+        function fitTwoLineFields() {
+            document.querySelectorAll('.calendar-tag.tag-twoline').forEach(tag => {
+                const cs = getComputedStyle(tag);
+                const lineHeightPx = parseFloat(cs.lineHeight);
+                const paddingV = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+                const twoLineHeight = lineHeightPx * 2 + paddingV;
+
+                // 一行或剛好兩行都不用處理，讓內容自然決定高度
+                if (tag.scrollHeight <= twoLineHeight + 0.5) return;
+
+                tag.style.maxHeight = twoLineHeight + 'px';
+                tag.style.overflow = 'hidden';
+
+                let size = parseFloat(cs.fontSize);
+                const minSize = 6;
+                while (tag.scrollHeight > twoLineHeight + 0.5 && size > minSize) {
+                    size -= 0.5;
+                    tag.style.fontSize = size + 'px';
+                }
+            });
+        }
+
+        // 短暫顯示在日期格上的回饋文字（例如「已複製」）
+        function showCellFeedback(dayEl, text) {
+            const badge = document.createElement('div');
+            badge.className = 'day-feedback-badge';
+            badge.textContent = text;
+            dayEl.appendChild(badge);
+            setTimeout(() => badge.remove(), 700);
+        }
+
+        function copyDayWithFeedback(dateStr, dayEl) {
+            if (!scheduleData[dateStr] || isDayEmpty(dateStr)) {
+                showCellFeedback(dayEl, '沒有資料可複製');
+                return;
+            }
+            clipboard = JSON.parse(JSON.stringify(scheduleData[dateStr]));
+            showCellFeedback(dayEl, '✓ 已複製');
+        }
+
+        function pasteDayWithFeedback(dateStr, dayEl) {
+            if (!clipboard) {
+                showCellFeedback(dayEl, '尚未複製資料');
+                return;
+            }
+            scheduleData[dateStr] = JSON.parse(JSON.stringify(clipboard));
+            markUnsaved();
+            showCellFeedback(dayEl, '✓ 已貼上');
+            setTimeout(() => loadCalendar(), 500);
+        }
+
+        // 單日格子的互動：單擊＝開啟編輯、快速點兩下＝複製、長按＝貼上
+        const LONG_PRESS_MS = 550;
+        const DOUBLE_TAP_MS = 320;
+        const MOVE_CANCEL_PX = 10;
+
+        function attachDayInteractions(dayEl, dateStr) {
+            let pressTimer = null;
+            let longPressTriggered = false;
+            let startX = 0, startY = 0, moved = false;
+            let pendingClickTimer = null;
+
+            const clearPressTimer = () => {
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
                 }
             };
 
-            calendar.appendChild(dayEl);
+            dayEl.addEventListener('pointerdown', (e) => {
+                longPressTriggered = false;
+                moved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+                clearPressTimer();
+                pressTimer = setTimeout(() => {
+                    longPressTriggered = true;
+                    pasteDayWithFeedback(dateStr, dayEl);
+                }, LONG_PRESS_MS);
+            });
+
+            dayEl.addEventListener('pointermove', (e) => {
+                if (Math.abs(e.clientX - startX) > MOVE_CANCEL_PX || Math.abs(e.clientY - startY) > MOVE_CANCEL_PX) {
+                    moved = true;
+                    clearPressTimer();
+                }
+            });
+
+            dayEl.addEventListener('pointerup', () => {
+                clearPressTimer();
+
+                if (longPressTriggered) {
+                    longPressTriggered = false;
+                    return;
+                }
+                if (moved) return;
+
+                if (pendingClickTimer) {
+                    // 短時間內第二次點擊 = 點兩下複製
+                    clearTimeout(pendingClickTimer);
+                    pendingClickTimer = null;
+                    copyDayWithFeedback(dateStr, dayEl);
+                } else {
+                    pendingClickTimer = setTimeout(() => {
+                        pendingClickTimer = null;
+                        openEditModal(dateStr);
+                    }, DOUBLE_TAP_MS);
+                }
+            });
+
+            dayEl.addEventListener('pointercancel', clearPressTimer);
         }
 
         // 工具函數
@@ -817,39 +1628,40 @@
         }
 
         // 編輯面板
+        const FIELD_OPTIONS = {
+            calendarType: calendarTypes,
+            shift: shiftTimes,
+            location: baseLocations,
+            machine: machines,
+            operation: operations
+        };
+
         function openEditModal(dateStr) {
             selectedDate = dateStr;
             const data = scheduleData[dateStr] || {};
-            
-            const [y, m, d] = dateStr.split('/');
-            document.getElementById('editDateTitle').textContent = `${dateStr}`;
-            
-            // 更新字段顯示
-            updateEditField('calendarType', data.calendarType || '', calendarTypes);
-            updateEditField('shift', data.shift || '', shiftTimes);
-            updateEditField('location', data.location || '', baseLocations);
-            updateEditField('machine', data.machine || '', machines);
-            updateEditField('operation', data.operation || '', operations);
 
-            // 為行事曆別根據值動態設置顏色
-            const calendarOptions = document.getElementById('options_calendarType');
-            const tags = calendarOptions.querySelectorAll('.edit-tag-option');
-            tags.forEach(tag => {
-                const value = tag.textContent;
-                if (value === '工作日') tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
-                else if (value === '休息日') tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
-                else if (value === '例假日') tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
-                else if (value === '國定假日') tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
+            document.getElementById('editDateTitle').textContent = dateStr;
+
+            ['shift', 'location', 'machine', 'operation'].forEach(field => {
+                const filterInput = document.getElementById('filter_' + field);
+                if (filterInput) filterInput.value = '';
             });
 
-            // 根據行事曆別決定其他字段是否顯示
-            const isHoliday = data.calendarType === '例假日';
-            document.getElementById('shiftField').style.display = isHoliday ? 'none' : 'flex';
-            document.getElementById('locationField').style.display = isHoliday ? 'none' : 'flex';
-            document.getElementById('machineField').style.display = isHoliday ? 'none' : 'flex';
-            document.getElementById('operationField').style.display = isHoliday ? 'none' : 'flex';
+            Object.keys(FIELD_OPTIONS).forEach(field => {
+                updateEditField(field, data[field] || '', FIELD_OPTIONS[field]);
+                setFieldErrorState(field, false);
+            });
+
+            updateFieldVisibility(data.calendarType);
 
             document.getElementById('editModal').style.display = 'flex';
+        }
+
+        // 標示/清除欄位的紅框錯誤提示
+        function setFieldErrorState(field, hasError) {
+            const wrapperId = field === 'calendarType' ? 'calendarTypeField' : field + 'Field';
+            const el = document.getElementById(wrapperId);
+            if (el) el.classList.toggle('field-error', hasError);
         }
 
         function closeEditModal() {
@@ -858,75 +1670,83 @@
             loadCalendar();
         }
 
-        // 更新編輯字段為標籤選項
+        // 根據行事曆別決定其他字段是否顯示（例假日不需要班別/地點/機台/內容）
+        function updateFieldVisibility(calendarType) {
+            const isHoliday = calendarType === '例假日';
+            document.getElementById('shiftField').style.display = isHoliday ? 'none' : 'flex';
+            document.getElementById('locationField').style.display = isHoliday ? 'none' : 'flex';
+            document.getElementById('machineField').style.display = isHoliday ? 'none' : 'flex';
+            document.getElementById('operationField').style.display = isHoliday ? 'none' : 'flex';
+        }
+
+        // 更新編輯字段為標籤選項：未選取＝白底色框，選取後＝實心色塊按鈕
         function updateEditField(field, value, options) {
             const container = document.getElementById('options_' + field);
             container.innerHTML = '';
 
             options.forEach(opt => {
+                const color = getFieldColor(field, opt);
+                const isSelected = opt === value;
+
                 const tag = document.createElement('span');
-                tag.className = 'edit-tag-option';
+                tag.className = 'edit-tag-option' + (isSelected ? ' selected' : '');
                 tag.textContent = opt;
-                if (opt === value) tag.classList.add('selected');
-                tag.onclick = () => selectField(field, opt);
-                
-                // 設置背景顏色
-                if (field === 'calendarType') {
-                    tag.style.background = '#888';
-                } else if (field === 'shift') {
-                    tag.style.background = 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)';
-                } else if (field === 'location') {
-                    tag.style.background = 'linear-gradient(135deg, #5dade2 0%, #3498db 100%)';
-                } else if (field === 'machine') {
-                    tag.style.background = 'linear-gradient(135deg, #f8a5d6 0%, #ff69b4 100%)';
-                } else if (field === 'operation') {
-                    tag.style.background = 'linear-gradient(135deg, #48c774 0%, #1abc9c 100%)';
-                }
-                
+                tag.style.borderColor = color.base;
+                tag.style.color = isSelected ? 'white' : color.base;
+                tag.style.background = isSelected ? color.base : 'white';
+                // 再次點選已選取的項目可取消選取
+                tag.onclick = () => selectField(field, isSelected ? '' : opt);
+
                 container.appendChild(tag);
+            });
+
+            // 重新渲染後，維持原本輸入的篩選文字
+            const filterInput = document.getElementById('filter_' + field);
+            if (filterInput && filterInput.value) {
+                filterFieldOptions(field, filterInput.value);
+            }
+        }
+
+        // 依輸入文字即時篩選班別/地點/機台/內容的選項（不影響已選取的狀態，只是隱藏不符合的選項）
+        function filterFieldOptions(field, query) {
+            const container = document.getElementById('options_' + field);
+            const q = query.trim().toLowerCase();
+            container.querySelectorAll('.edit-tag-option').forEach(el => {
+                const match = !q || el.textContent.toLowerCase().includes(q);
+                el.style.display = match ? 'inline-block' : 'none';
             });
         }
 
         function selectField(field, value) {
+            setFieldErrorState(field, false);
+            markUnsaved();
+
             if (!scheduleData[selectedDate]) {
                 scheduleData[selectedDate] = {};
             }
-            scheduleData[selectedDate][field] = value;
+            if (value) {
+                scheduleData[selectedDate][field] = value;
+            } else {
+                delete scheduleData[selectedDate][field];
+            }
 
-            // 如果改變了行事曆別，可能需要隱藏字段
             if (field === 'calendarType') {
-                const isHoliday = value === '例假日';
-                document.getElementById('shiftField').style.display = isHoliday ? 'none' : 'flex';
-                document.getElementById('locationField').style.display = isHoliday ? 'none' : 'flex';
-                document.getElementById('machineField').style.display = isHoliday ? 'none' : 'flex';
-                document.getElementById('operationField').style.display = isHoliday ? 'none' : 'flex';
+                updateFieldVisibility(value);
 
-                if (isHoliday) {
+                if (value === '例假日') {
                     delete scheduleData[selectedDate].shift;
                     delete scheduleData[selectedDate].location;
                     delete scheduleData[selectedDate].machine;
                     delete scheduleData[selectedDate].operation;
-                    
-                    // 更新這些字段的顯示
+
                     updateEditField('shift', '', shiftTimes);
                     updateEditField('location', '', baseLocations);
                     updateEditField('machine', '', machines);
                     updateEditField('operation', '', operations);
                 }
-
-                // 更新行事曆別標籤顏色
-                const calendarOptions = document.getElementById('options_calendarType');
-                const tags = calendarOptions.querySelectorAll('.edit-tag-option');
-                tags.forEach(tag => {
-                    const tagValue = tag.textContent;
-                    if (tagValue === '工作日') tag.style.background = 'linear-gradient(135deg, #b3d9f2 0%, #81c3e8 100%)';
-                    else if (tagValue === '休息日') tag.style.background = 'linear-gradient(135deg, #b8e6c9 0%, #81d89f 100%)';
-                    else if (tagValue === '例假日') tag.style.background = 'linear-gradient(135deg, #ff9999 0%, #ff6666 100%)';
-                    else if (tagValue === '國定假日') tag.style.background = 'linear-gradient(135deg, #ffb3d9 0%, #ff99cc 100%)';
-                });
             }
 
-            updateEditField(field, value, field === 'calendarType' ? calendarTypes : field === 'shift' ? shiftTimes : field === 'location' ? baseLocations : field === 'machine' ? machines : operations);
+            updateEditField(field, value, FIELD_OPTIONS[field]);
         }
 
         // 複製貼上
@@ -939,6 +1759,7 @@
         function pasteDate() {
             if (clipboard && selectedDate) {
                 scheduleData[selectedDate] = JSON.parse(JSON.stringify(clipboard));
+                markUnsaved();
                 closeEditModal();
             }
         }
@@ -946,8 +1767,48 @@
         function clearDate() {
             if (selectedDate) {
                 delete scheduleData[selectedDate];
+                markUnsaved();
                 closeEditModal();
             }
+        }
+
+        // 按鈕短暫回饋：文字/樣式閃一下，再執行後續動作
+        function flashButtonFeedback(btn, tempText, callback) {
+            const original = btn.textContent;
+            btn.textContent = tempText;
+            btn.classList.add('btn-feedback');
+            setTimeout(() => {
+                btn.textContent = original;
+                btn.classList.remove('btn-feedback');
+                if (callback) callback();
+            }, 450);
+        }
+
+        // 編輯區塊儲存：用跟整頁儲存相同的規則驗證這一天，並把沒選的欄位框紅框
+        function saveDayEdit() {
+            ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(f => setFieldErrorState(f, false));
+
+            const result = validateDayData(selectedDate, scheduleData[selectedDate]);
+            if (result.message) {
+                result.missingFields.forEach(f => setFieldErrorState(f, true));
+                showErrors([result.message]);
+                return;
+            }
+            flashButtonFeedback(document.querySelector('.edit-toolbar .action-btn.save'), '✓ 已儲存', closeEditModal);
+        }
+
+        // 複製並儲存：驗證通過後，先把這一天存進剪貼簿，再關閉面板
+        function copyAndSaveDayEdit() {
+            ['calendarType', 'shift', 'location', 'machine', 'operation'].forEach(f => setFieldErrorState(f, false));
+
+            const result = validateDayData(selectedDate, scheduleData[selectedDate]);
+            if (result.message) {
+                result.missingFields.forEach(f => setFieldErrorState(f, true));
+                showErrors([result.message]);
+                return;
+            }
+            copyDate();
+            flashButtonFeedback(document.querySelector('.edit-toolbar .action-btn.copy'), '✓ 已複製並儲存', closeEditModal);
         }
 
         // 儲存
@@ -976,64 +1837,177 @@
 
             localStorage.setItem('currentEmployeeId', employeeId);
             localStorage.setItem('scheduleData', JSON.stringify(scheduleData));
-            
+            hasUnsavedChanges = false;
+
             const status = document.getElementById('savedStatus');
             status.innerHTML = '<span class="saved-badge">✓ 已儲存</span>';
             setTimeout(() => {
                 status.innerHTML = '';
             }, 2000);
+
+            showSaveReminder();
+        }
+
+        // 儲存成功後，提醒有差異的班別（不影響已完成的儲存）
+        // 例假日可以多排、不能少排：例假日多排時，只要休息日+例假日的合計跟應排合計一致
+        // （代表只是把一天休息日排成例假日），這兩項就不算差異；其他情況都要提醒。
+        function showSaveReminder() {
+            const stats = computeStats();
+            const restRow = stats.find(r => r.label === '休息日');
+            const holidayRow = stats.find(r => r.label === '例假日');
+            const isAllowedSwap = holidayRow && restRow &&
+                holidayRow.actual > holidayRow.expected &&
+                (restRow.actual + holidayRow.actual) === (restRow.expected + holidayRow.expected);
+
+            const diffRows = stats.filter(r => {
+                if (r.expected === r.actual) return false;
+                if (isAllowedSwap && (r.label === '休息日' || r.label === '例假日')) return false;
+                return true;
+            });
+            if (diffRows.length === 0) return;
+
+            document.getElementById('reminderList').innerHTML = diffRows.map(r =>
+                `<div class="reminder-item">${r.label} ${diffLabel(r.expected, r.actual)}</div>`
+            ).join('');
+            document.getElementById('reminderModal').classList.remove('hidden');
+        }
+
+        function closeReminderModal() {
+            document.getElementById('reminderModal').classList.add('hidden');
+        }
+
+        // 單日資料驗證規則（全頁儲存與編輯區塊儲存共用同一套規則）：
+        // (1) 選例假日：其他四格不需選擇
+        // (2) 選休息日/國定假日：其他四格全部空白可以，但只選了一部分就算錯誤
+        // (3) 五格都空白可以
+        // (4) 選工作日：其他四格一定要全選
+        // (5) 選了其他四格中任一格，但沒選行事曆別，也算錯誤
+        // 回傳 { message, missingFields }：message 為簡短錯誤訊息，missingFields 是需要框紅框提示的欄位
+        function validateDayData(dateStr, data) {
+            if (!data) return { message: null, missingFields: [] };
+
+            const fieldKeys = ['shift', 'location', 'machine', 'operation'];
+            const filled = fieldKeys.filter(f => data[f]);
+            const missing = fieldKeys.filter(f => !data[f]);
+
+            if (!data.calendarType) {
+                if (filled.length > 0) {
+                    return { message: `${dateStr} 資訊不完整`, missingFields: ['calendarType'] };
+                }
+                return { message: null, missingFields: [] };
+            }
+
+            if (data.calendarType === '例假日') {
+                return { message: null, missingFields: [] };
+            }
+
+            if (data.calendarType === '工作日') {
+                if (filled.length < 4) {
+                    return { message: `${dateStr} 資訊不完整`, missingFields: missing };
+                }
+                return { message: null, missingFields: [] };
+            }
+
+            // 休息日 / 國定假日：全部選擇或全部空白
+            if (filled.length > 0 && filled.length < 4) {
+                return { message: `${dateStr} 資訊不完整`, missingFields: missing };
+            }
+            return { message: null, missingFields: [] };
+        }
+
+        function isDayEmpty(dateStr) {
+            const data = scheduleData[dateStr];
+            return !data || (!data.calendarType && !data.shift && !data.location && !data.machine && !data.operation);
+        }
+
+        // 每連續7天須至少排一天例假日；只檢查「這7天都已排班」的區間，
+        // 範圍涵蓋當月、前一個月最後7天、後一個月前7天（跨月自動處理進位）
+        function checkSevenDayRule(y, m) {
+            const errors = [];
+            const days = getDaysInMonth(y, m);
+            const reported = new Set();
+
+            let startDay = 1 - 6;
+            let startMonth = m;
+            let startYear = y;
+            if (startDay <= 0) {
+                startMonth = m - 1;
+                startYear = y;
+                if (startMonth < 1) {
+                    startMonth = 12;
+                    startYear = y - 1;
+                }
+                const prevDays = getDaysInMonth(startYear, startMonth);
+                startDay = prevDays + startDay;
+            }
+
+            let curD = startDay, curM = startMonth, curY = startYear;
+
+            while (true) {
+                const windowDates = [];
+                let allFilled = true;
+
+                for (let offset = 0; offset < 7; offset++) {
+                    let d = curD + offset, mm = curM, yy = curY;
+                    let dim = getDaysInMonth(yy, mm);
+                    while (d > dim) {
+                        d -= dim;
+                        mm++;
+                        if (mm > 12) { mm = 1; yy++; }
+                        dim = getDaysInMonth(yy, mm);
+                    }
+                    const dateStr = `${yy}/${String(mm).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+                    if (isDayEmpty(dateStr)) {
+                        allFilled = false;
+                        break;
+                    }
+                    windowDates.push({ m: mm, d, type: scheduleData[dateStr].calendarType || '' });
+                }
+
+                if (allFilled) {
+                    const hasHoliday = windowDates.some(x => x.type === '例假日');
+                    if (!hasHoliday) {
+                        const first = windowDates[0], last = windowDates[6];
+                        const key = `${first.m}/${first.d}-${last.m}/${last.d}`;
+                        if (!reported.has(key)) {
+                            reported.add(key);
+                            errors.push(`${key} 每7天需安排一天例假日`);
+                        }
+                    }
+                }
+
+                curD++;
+                const dim = getDaysInMonth(curY, curM);
+                if (curD > dim) {
+                    curD = 1;
+                    curM++;
+                    if (curM > 12) { curM = 1; curY++; }
+                }
+
+                if (curY > y || (curY === y && curM > m) || (curY === y && curM === m && curD > days)) {
+                    break;
+                }
+            }
+
+            return errors;
         }
 
         // 驗證邏輯（保持原有的所有規則）
         function validateData() {
             const errors = [];
-            const [year, month] = currentMonth.split('_');
-            const y = parseInt(year);
-            const m = parseInt(month);
+            const y = currentYear;
+            const m = currentMonthNum;
             const days = getDaysInMonth(y, m);
 
-            let start, end;
-            if (currentRange === 1) {
-                start = 1;
-                end = 15;
-            } else if (currentRange === 2) {
-                start = 16;
-                end = days;
-            } else {
-                start = 1;
-                end = days;
-            }
-
             // 檢查資料完整性
-            for (let d = start; d <= end; d++) {
+            for (let d = 1; d <= days; d++) {
                 const dateStr = `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
-                const data = scheduleData[dateStr];
-                
-                if (!data || (!data.calendarType && !data.shift && !data.location && !data.machine && !data.operation)) {
-                    continue;
-                }
-
-                const hasShift = data && data.shift;
-                const hasLocation = data && data.location;
-                const hasMachine = data && data.machine;
-                const hasOperation = data && data.operation;
-                const hasCalendarType = data && data.calendarType;
-                
-                const hasAnyField = hasShift || hasLocation || hasMachine || hasOperation;
-                
-                if (hasAnyField) {
-                    if (!hasCalendarType) {
-                        errors.push(`${dateStr} 請選擇行事曆別`);
-                    }
-                    
-                    if (!hasShift || !hasLocation || !hasMachine || !hasOperation) {
-                        errors.push(`${dateStr} 資料不完整`);
-                    }
-                }
+                const result = validateDayData(dateStr, scheduleData[dateStr]);
+                if (result.message) errors.push(result.message);
             }
 
-            // 7天規則檢查（保持原有邏輯）
-            // TODO: 實現7天規則
+            // 每7天需有一天例假日
+            errors.push(...checkSevenDayRule(y, m));
 
             return errors;
         }
@@ -1050,9 +2024,187 @@
             document.getElementById('errorModal').classList.add('hidden');
         }
 
-        // 匯出Excel（暫未實現）
+        // 統計：應排（依規則計算）vs 已排（實際輸入的資料）
+        function countWeekday(y, m, weekday) {
+            const days = getDaysInMonth(y, m);
+            let count = 0;
+            for (let d = 1; d <= days; d++) {
+                if (new Date(y, m - 1, d).getDay() === weekday) count++;
+            }
+            return count;
+        }
+
+        function countNationalHolidays(y, m) {
+            const prefix = `${y}/${String(m).padStart(2, '0')}/`;
+            return nationalHolidays.filter(d => d.startsWith(prefix)).length;
+        }
+
+        function computeStats() {
+            const y = currentYear;
+            const m = currentMonthNum;
+            const days = getDaysInMonth(y, m);
+
+            const restExpected = countWeekday(y, m, 6);      // 休息日＝當月週六天數
+            const holidayExpected = countWeekday(y, m, 0);   // 例假日＝當月週日天數
+            const nationalExpected = countNationalHolidays(y, m);
+            const workExpected = days - (restExpected + holidayExpected + nationalExpected);
+
+            const actual = { '工作日': 0, '休息日': 0, '例假日': 0, '國定假日': 0 };
+            const prefix = `${y}/${String(m).padStart(2, '0')}/`;
+            Object.keys(scheduleData).forEach(dateStr => {
+                if (!dateStr.startsWith(prefix)) return;
+                const type = scheduleData[dateStr].calendarType;
+                if (type && actual.hasOwnProperty(type)) actual[type]++;
+            });
+
+            return [
+                { label: '工作日', expected: workExpected, actual: actual['工作日'] },
+                { label: '休息日', expected: restExpected, actual: actual['休息日'] },
+                { label: '例假日', expected: holidayExpected, actual: actual['例假日'] },
+                { label: '國定假日', expected: nationalExpected, actual: actual['國定假日'] }
+            ];
+        }
+
+        function diffLabel(expected, actual) {
+            const diff = expected - actual;
+            if (diff > 0) return `少${diff}天`;
+            if (diff < 0) return `多${-diff}天`;
+            return '-';
+        }
+
+        function showStatsModal() {
+            const rows = computeStats();
+            document.getElementById('statsTableBody').innerHTML = rows.map(r => `
+                <tr>
+                    <td>${r.label}</td>
+                    <td>${r.expected}</td>
+                    <td>${r.actual}</td>
+                    <td>${diffLabel(r.expected, r.actual)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('statsModal').classList.remove('hidden');
+        }
+
+        function closeStatsModal() {
+            document.getElementById('statsModal').classList.add('hidden');
+        }
+
+        // 匯出Excel：跳出範圍選擇對話框
         function exportExcel() {
-            alert('匯出Excel功能開發中，請先確認要匯出的內容');
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        // 從「社員編號」欄位（例如 "S0116 林宗翰"）拆出員工編號與姓名
+        function parseEmployeeField() {
+            const raw = document.getElementById('employeeId').value.trim();
+            const spaceIdx = raw.indexOf(' ');
+            if (!raw || spaceIdx < 1) return null;
+
+            const code = raw.slice(0, spaceIdx);
+            const name = raw.slice(spaceIdx + 1).trim();
+            const validCodes = ROSTER.map(r => r.code);
+            if (!validCodes.includes(code) || !name) return null;
+
+            return { code, name };
+        }
+
+        // rangeType: 1=上半月 2=下半月 3=整月
+        async function doExport(rangeType) {
+            const employee = parseEmployeeField();
+            if (!employee) {
+                showErrors(['請先選擇社員編號（從下拉選單選擇）']);
+                return;
+            }
+
+            const y = currentYear;
+            const m = currentMonthNum;
+            const days = getDaysInMonth(y, m);
+
+            let start, end;
+            if (rangeType === 1) {
+                start = 1;
+                end = 15;
+            } else if (rangeType === 2) {
+                start = 16;
+                end = days;
+            } else {
+                start = 1;
+                end = days;
+            }
+
+            closeExportModal();
+
+            try {
+                await generateExcelFile(y, m, start, end, employee.code, employee.name);
+            } catch (err) {
+                showErrors(['匯出失敗：' + err.message]);
+            }
+        }
+
+        // 依照範本 schedule-template.xlsx 產生班表 Excel（其餘分頁與樣式完全沿用範本）
+        async function generateExcelFile(y, m, start, end, code, name) {
+            const resp = await fetch('schedule-template.xlsx');
+            const buf = await resp.arrayBuffer();
+
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(buf);
+            const ws = workbook.getWorksheet('班表資料');
+
+            const pad = n => String(n).padStart(2, '0');
+            const startStr = `${y}/${pad(m)}/${pad(start)}`;
+            const endStr = `${y}/${pad(m)}/${pad(end)}`;
+            const weekChars = ['日', '一', '二', '三', '四', '五', '六'];
+
+            ws.getCell('A1').value = `${code}${name} 班表`;
+            ws.getCell('C1').value = `${startStr} ~ ${endStr}`;
+            ws.getCell('A5').value = code;
+            ws.getCell('B5').value = name;
+
+            const FIRST_DATE_COL = 5; // E欄
+            const TEMPLATE_LAST_COL = 35; // 範本原本到 AI 欄（31天）
+            const neededDays = end - start + 1;
+
+            for (let i = 0; i < neededDays; i++) {
+                const day = start + i;
+                const col = FIRST_DATE_COL + i;
+                const dateStr = `${y}/${pad(m)}/${pad(day)}`;
+                const weekChar = weekChars[new Date(y, m - 1, day).getDay()];
+                const dayData = scheduleData[dateStr] || {};
+
+                ws.getCell(3, col).value = dateStr;
+                ws.getCell(4, col).value = weekChar;
+                ws.getCell(5, col).value = dayData.calendarType || '';
+                ws.getCell(6, col).value = dayData.shift || '';
+                ws.getCell(7, col).value = dayData.location || '';
+                ws.getCell(8, col).value = dayData.machine || '';
+                ws.getCell(9, col).value = dayData.operation || '';
+                ws.getColumn(col).width = 21;
+            }
+
+            // 半月/短月份不需要用到範本原本31天的全部欄位，把多餘欄位刪掉
+            // （spliceColumns 會清空與刪除範圍重疊的合併儲存格內容，例如 A2:Z2 的提醒橫幅，
+            //   所以先記住文字，刪除欄位後再寫回去）
+            const bannerText = ws.getCell('A2').value;
+            const lastNeededCol = FIRST_DATE_COL + neededDays - 1;
+            if (lastNeededCol < TEMPLATE_LAST_COL) {
+                ws.spliceColumns(lastNeededCol + 1, TEMPLATE_LAST_COL - lastNeededCol);
+            }
+            ws.getCell('A2').value = bannerText;
+
+            const outBuffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([outBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${code}${name}_班表_${y}${pad(m)}${pad(start)}-${y}${pad(m)}${pad(end)}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
