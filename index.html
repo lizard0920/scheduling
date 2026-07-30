@@ -627,6 +627,85 @@
             background: #e08e0b;
         }
 
+        /* 匯出Excel範圍選擇 */
+        .export-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .export-modal.hidden {
+            display: none;
+        }
+
+        .export-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .export-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 16px;
+        }
+
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .export-option-btn {
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-option-btn span {
+            font-size: 12px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .export-option-btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .export-cancel-btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-cancel-btn:hover {
+            background: #e0e0e0;
+        }
+
         /* 手機響應式 */
         @media (max-width: 768px) {
             .container {
@@ -904,6 +983,20 @@
         </div>
     </div>
 
+    <!-- 匯出Excel範圍選擇 -->
+    <div class="export-modal hidden" id="exportModal" onclick="if(event.target === this) closeExportModal()">
+        <div class="export-content">
+            <div class="export-title">📊 選擇匯出範圍</div>
+            <div class="export-options">
+                <button class="export-option-btn" onclick="doExport(1)">上半月<br><span>1-15日</span></button>
+                <button class="export-option-btn" onclick="doExport(2)">下半月<br><span>16日-月底</span></button>
+                <button class="export-option-btn" onclick="doExport(3)">整月份</button>
+            </div>
+            <button class="export-cancel-btn" onclick="closeExportModal()">取消</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script>
         // 數據存儲
         const ROSTER = [
@@ -1603,9 +1696,122 @@
             document.getElementById('statsModal').classList.add('hidden');
         }
 
-        // 匯出Excel（暫未實現）
+        // 匯出Excel：跳出範圍選擇對話框
         function exportExcel() {
-            alert('匯出Excel功能開發中，請先確認要匯出的內容');
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        // 從「社員編號」欄位（例如 "S0116 林宗翰"）拆出員工編號與姓名
+        function parseEmployeeField() {
+            const raw = document.getElementById('employeeId').value.trim();
+            const spaceIdx = raw.indexOf(' ');
+            if (!raw || spaceIdx < 1) return null;
+
+            const code = raw.slice(0, spaceIdx);
+            const name = raw.slice(spaceIdx + 1).trim();
+            const validCodes = ROSTER.map(r => r.code);
+            if (!validCodes.includes(code) || !name) return null;
+
+            return { code, name };
+        }
+
+        // rangeType: 1=上半月 2=下半月 3=整月
+        async function doExport(rangeType) {
+            const employee = parseEmployeeField();
+            if (!employee) {
+                showErrors(['請先選擇社員編號（從下拉選單選擇）']);
+                return;
+            }
+
+            const y = currentYear;
+            const m = currentMonthNum;
+            const days = getDaysInMonth(y, m);
+
+            let start, end;
+            if (rangeType === 1) {
+                start = 1;
+                end = 15;
+            } else if (rangeType === 2) {
+                start = 16;
+                end = days;
+            } else {
+                start = 1;
+                end = days;
+            }
+
+            closeExportModal();
+
+            try {
+                await generateExcelFile(y, m, start, end, employee.code, employee.name);
+            } catch (err) {
+                showErrors(['匯出失敗：' + err.message]);
+            }
+        }
+
+        // 依照範本 schedule-template.xlsx 產生班表 Excel（其餘分頁與樣式完全沿用範本）
+        async function generateExcelFile(y, m, start, end, code, name) {
+            const resp = await fetch('schedule-template.xlsx');
+            const buf = await resp.arrayBuffer();
+
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(buf);
+            const ws = workbook.getWorksheet('班表資料');
+
+            const pad = n => String(n).padStart(2, '0');
+            const startStr = `${y}/${pad(m)}/${pad(start)}`;
+            const endStr = `${y}/${pad(m)}/${pad(end)}`;
+            const weekChars = ['日', '一', '二', '三', '四', '五', '六'];
+
+            ws.getCell('A1').value = `${code}${name} 班表`;
+            ws.getCell('C1').value = `${startStr} ~ ${endStr}`;
+            ws.getCell('A5').value = code;
+            ws.getCell('B5').value = name;
+
+            const FIRST_DATE_COL = 5; // E欄
+            const TEMPLATE_LAST_COL = 35; // 範本原本到 AI 欄（31天）
+            const neededDays = end - start + 1;
+
+            for (let i = 0; i < neededDays; i++) {
+                const day = start + i;
+                const col = FIRST_DATE_COL + i;
+                const dateStr = `${y}/${pad(m)}/${pad(day)}`;
+                const weekChar = weekChars[new Date(y, m - 1, day).getDay()];
+                const dayData = scheduleData[dateStr] || {};
+
+                ws.getCell(3, col).value = dateStr;
+                ws.getCell(4, col).value = weekChar;
+                ws.getCell(5, col).value = dayData.calendarType || '';
+                ws.getCell(6, col).value = dayData.shift || '';
+                ws.getCell(7, col).value = dayData.location || '';
+                ws.getCell(8, col).value = dayData.machine || '';
+                ws.getCell(9, col).value = dayData.operation || '';
+                ws.getColumn(col).width = 21;
+            }
+
+            // 半月/短月份不需要用到範本原本31天的全部欄位，把多餘欄位刪掉
+            // （spliceColumns 會清空與刪除範圍重疊的合併儲存格內容，例如 A2:Z2 的提醒橫幅，
+            //   所以先記住文字，刪除欄位後再寫回去）
+            const bannerText = ws.getCell('A2').value;
+            const lastNeededCol = FIRST_DATE_COL + neededDays - 1;
+            if (lastNeededCol < TEMPLATE_LAST_COL) {
+                ws.spliceColumns(lastNeededCol + 1, TEMPLATE_LAST_COL - lastNeededCol);
+            }
+            ws.getCell('A2').value = bannerText;
+
+            const outBuffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([outBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${code}${name}_班表_${y}${pad(m)}${pad(start)}-${y}${pad(m)}${pad(end)}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
