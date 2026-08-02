@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>機車停車模擬器 - 龍頭與車身方向練習</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        color: #2c3e50;
+        min-height: 100vh;
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+    }
+    .wrap { width: 100%; max-width: 960px; }
+    h1 { font-size: 18px; text-align:center; margin-bottom: 4px; }
+    .subtitle { text-align:center; font-size:12px; color:#666; margin-bottom:12px; }
+
+    .modes {
+        display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; justify-content:center;
+    }
+    .mode-btn {
+        flex:1; min-width:110px; padding:9px 6px; border-radius:8px; border:2px solid #d5dce0;
+        background:white; font-size:13px; font-weight:600; cursor:pointer; color:#34495e;
+        transition: all .15s;
+    }
+    .mode-btn.active { border-color:#3498db; background:linear-gradient(135deg,#5dade2 0%,#3498db 100%); color:white; }
+
+    .board {
+        background: linear-gradient(to bottom, #ffffff, #f8fafb);
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .canvas-holder { position:relative; width:100%; }
+    canvas {
+        width: 100%;
+        height: auto;
+        display:block;
+        border-radius: 8px;
+        background:#2f333a;
+        touch-action: none;
+    }
+    canvas.bump { animation: flashRed .25s ease; }
+    @keyframes flashRed {
+        0% { box-shadow: 0 0 0 6px rgba(231,76,60,0.9) inset; }
+        100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
+    }
+
+    .success-overlay {
+        position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        background: rgba(20,30,20,0.55); border-radius:8px; flex-direction:column; gap:10px;
+        opacity:0; pointer-events:none; transition: opacity .25s;
+    }
+    .success-overlay.show { opacity:1; pointer-events:auto; }
+    .success-card {
+        background:white; padding:20px 26px; border-radius:12px; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.3);
+    }
+    .success-card .big { font-size:22px; font-weight:700; color:#1abc9c; margin-bottom:6px; }
+    .success-card .small { font-size:13px; color:#666; margin-bottom:14px; }
+    .success-card button {
+        padding:9px 18px; border:none; border-radius:6px; background:linear-gradient(135deg,#48c774 0%,#1abc9c 100%);
+        color:white; font-weight:700; cursor:pointer; font-size:14px;
+    }
+
+    /* HUD */
+    .hud {
+        display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-top:10px;
+    }
+    .hud-item {
+        background:#f5f7fa; border-radius:8px; padding:8px 10px; text-align:center;
+    }
+    .hud-item .label { font-size:11px; color:#888; font-weight:600; margin-bottom:4px; }
+    .hud-item .value { font-size:14px; font-weight:700; color:#2c3e50; }
+
+    .gauge-row { display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap; }
+    .gauge-box { flex:1; min-width:200px; background:#f5f7fa; border-radius:8px; padding:10px; }
+    .gauge-title { font-size:11px; font-weight:700; color:#666; margin-bottom:6px; }
+
+    /* steering bar gauge */
+    .steer-bar-track {
+        position:relative; height:14px; border-radius:7px; background:#e0e3e8; overflow:visible;
+    }
+    .steer-bar-center { position:absolute; left:50%; top:-3px; width:2px; height:20px; background:#aaa; }
+    .steer-bar-fill { position:absolute; top:0; height:14px; background:linear-gradient(135deg,#5dade2,#3498db); border-radius:7px; }
+    .steer-bar-marker {
+        position:absolute; top:-5px; width:4px; height:24px; background:#e67e22; border-radius:2px;
+        transform: translateX(-50%); transition: left .05s linear;
+    }
+    .steer-labels { display:flex; justify-content:space-between; font-size:10px; color:#999; margin-top:3px; }
+
+    /* compass */
+    .compass-wrap { display:flex; align-items:center; gap:10px; }
+    .compass {
+        width:60px; height:60px; border-radius:50%; background:white; border:2px solid #d5dce0;
+        position:relative; flex-shrink:0;
+    }
+    .compass .n,.compass .s,.compass .e,.compass .w {
+        position:absolute; font-size:9px; color:#aaa; font-weight:700;
+    }
+    .compass .n { top:2px; left:50%; transform:translateX(-50%); }
+    .compass .s { bottom:2px; left:50%; transform:translateX(-50%); }
+    .compass .e { right:3px; top:50%; transform:translateY(-50%); }
+    .compass .w { left:3px; top:50%; transform:translateY(-50%); }
+    .compass-arrow {
+        position:absolute; left:50%; top:50%; width:4px; height:24px;
+        background: linear-gradient(#e74c3c,#c0392b); border-radius:2px;
+        transform-origin: 50% 100%;
+        margin-left:-2px; margin-top:-24px;
+    }
+    .compass-dot { position:absolute; left:50%; top:50%; width:6px; height:6px; margin-left:-3px; margin-top:-3px; background:#2c3e50; border-radius:50%; }
+    .compass-text { font-size:12px; color:#555; }
+
+    /* controls */
+    .controls {
+        display:flex; justify-content:space-between; gap:14px; margin-top:12px; flex-wrap:wrap;
+    }
+    .ctrl-group { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; min-width:150px; }
+    .ctrl-group .grp-title { font-size:11px; color:#888; font-weight:700; margin-bottom:2px; }
+    .ctrl-row { display:flex; gap:8px; }
+    .ctrl-btn {
+        width:64px; height:52px; border-radius:10px; border:none; font-size:20px; font-weight:700;
+        background:linear-gradient(to bottom,#ffffff,#eef1f4); border:2px solid #d5dce0; color:#34495e;
+        cursor:pointer; user-select:none; touch-action:none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .ctrl-btn:active, .ctrl-btn.pressed { background:linear-gradient(135deg,#5dade2,#3498db); color:white; border-color:#3498db; transform:translateY(1px); }
+    .ctrl-btn.brake:active, .ctrl-btn.brake.pressed { background:linear-gradient(135deg,#ff8a8a,#e74c3c); border-color:#e74c3c; }
+    .ctrl-btn.center-btn { font-size:12px; }
+
+    .bottom-row { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+    .util-btn {
+        padding:9px 16px; border-radius:8px; border:2px solid #d5dce0; background:white; font-size:13px;
+        font-weight:600; cursor:pointer; color:#34495e;
+    }
+    .util-btn.primary { background:linear-gradient(135deg,#48c774 0%,#1abc9c 100%); color:white; border:none; }
+
+    .toggle-row { display:flex; align-items:center; gap:6px; font-size:13px; color:#555; }
+
+    .tips {
+        margin-top:14px; background:#fffbe8; border:1px solid #f0e3a8; border-radius:8px; padding:12px 14px;
+        font-size:12.5px; line-height:1.7; color:#6b5a1e;
+    }
+    .tips b { color:#4a3d10; }
+    .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:#666; margin-top:8px; }
+    .legend span { display:inline-flex; align-items:center; gap:4px; }
+    .swatch { width:12px; height:12px; border-radius:3px; display:inline-block; }
+
+    @media (max-width:520px){
+        .ctrl-btn { width:56px; height:48px; font-size:18px; }
+        .hud { grid-template-columns: repeat(2,1fr); }
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h1>🏍️ 機車停車模擬器</h1>
+    <div class="subtitle">練習「龍頭轉多少、車子往哪走」——低速入庫的方向感訓練</div>
+
+    <div class="modes">
+        <button class="mode-btn active" data-mode="easy">垂直車格（入門）</button>
+        <button class="mode-btn" data-mode="angled">斜角車格（進階）</button>
+        <button class="mode-btn" data-mode="hard">窄格夾車（挑戰）</button>
+    </div>
+
+    <div class="board">
+        <div class="canvas-holder">
+            <canvas id="c" width="900" height="560"></canvas>
+            <div class="success-overlay" id="successOverlay">
+                <div class="success-card">
+                    <div class="big">🎉 停車成功！</div>
+                    <div class="small" id="successDetail">車身已對齊車格</div>
+                    <button onclick="resetGame(currentMode)">再玩一次</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="hud">
+            <div class="hud-item"><div class="label">狀態</div><div class="value" id="hudStatus">準備出發</div></div>
+            <div class="hud-item"><div class="label">速度</div><div class="value" id="hudSpeed">0.0 km/h</div></div>
+            <div class="hud-item"><div class="label">檔位</div><div class="value" id="hudGear">空檔</div></div>
+            <div class="hud-item"><div class="label">碰撞次數</div><div class="value" id="hudBumps">0</div></div>
+        </div>
+
+        <div class="gauge-row">
+            <div class="gauge-box">
+                <div class="gauge-title">🏍️ 龍頭（前輪）角度 — 相對車身</div>
+                <div class="steer-bar-track">
+                    <div class="steer-bar-center"></div>
+                    <div class="steer-bar-marker" id="steerMarker" style="left:50%"></div>
+                </div>
+                <div class="steer-labels"><span>← 左滿舵</span><span id="steerDeg">0°</span><span>右滿舵 →</span></div>
+            </div>
+            <div class="gauge-box">
+                <div class="gauge-title">🧭 車身朝向（實際移動方向）</div>
+                <div class="compass-wrap">
+                    <div class="compass">
+                        <span class="n">前</span><span class="s">後</span><span class="e">右</span><span class="w">左</span>
+                        <div class="compass-arrow" id="compassArrow"></div>
+                        <div class="compass-dot"></div>
+                    </div>
+                    <div class="compass-text" id="compassText">朝右（0°）</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="ctrl-group">
+                <div class="grp-title">龍頭（方向）</div>
+                <div class="ctrl-row">
+                    <button class="ctrl-btn" id="btnLeft">◀</button>
+                    <button class="ctrl-btn center-btn" id="btnCenter">回正</button>
+                    <button class="ctrl-btn" id="btnRight">▶</button>
+                </div>
+            </div>
+            <div class="ctrl-group">
+                <div class="grp-title">油門 / 煞車</div>
+                <div class="ctrl-row">
+                    <button class="ctrl-btn" id="btnRev">▼</button>
+                    <button class="ctrl-btn brake" id="btnBrake">■</button>
+                    <button class="ctrl-btn" id="btnFwd">▲</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-row">
+            <button class="util-btn primary" id="btnReset">🔄 重新開始（同車位）</button>
+            <label class="toggle-row"><input type="checkbox" id="chkPredict" checked> 顯示預測路徑</label>
+        </div>
+
+        <div class="legend">
+            <span><span class="swatch" style="background:#2ecc71"></span>目標車位</span>
+            <span><span class="swatch" style="background:#7f8c8d"></span>已停放機車（障礙）</span>
+            <span><span class="swatch" style="background:#e67e22"></span>預測行進路線</span>
+            <span><span class="swatch" style="background:#e74c3c"></span>碰撞警示</span>
+        </div>
+    </div>
+
+    <div class="tips">
+        <b>操作說明：</b>方向鍵 ↑↓←→ 或 WASD 控制；空白鍵煞車；手機請用畫面上的按鈕（按住不放）。<br>
+        <b>停車秘訣：</b>①車速越慢，同樣的龍頭角度可以轉出越小的彎（迴轉半徑變小），適合最後修正角度。
+        ②龍頭打的角度會保持住，不會自動回正，需要自己扳回來或按「回正」。
+        ③先用「預測路線」看看目前龍頭角度會把車帶去哪，再決定要不要催油門。
+        ④四個角都進到白線內、車頭方向對齊車格、速度歸零，才算停車成功。
+    </div>
+</div>
+
+<script>
+(function(){
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    // ---------- bike constants (px units, ~45px = 1m) ----------
+    const WHEELBASE = 58;
+    const BIKE_WIDTH = 34;
+    const FRONT_OVERHANG = 18;
+    const REAR_OVERHANG = 10;
+    const TOTAL_LEN = REAR_OVERHANG + WHEELBASE + FRONT_OVERHANG;
+    const FOOTPRINT_OFFSET = TOTAL_LEN / 2 - REAR_OVERHANG;
+
+    const MAX_STEER = deg2rad(32);
+    const STEER_RATE = deg2rad(100); // per second
+    const MAX_FWD = 130;   // px/s
+    const MAX_REV = 70;
+    const ACCEL = 110;
+    const COAST_DECEL = 150;
+    const BRAKE_DECEL = 260;
+
+    function deg2rad(d){ return d*Math.PI/180; }
+    function rad2deg(r){ return r*180/Math.PI; }
+    function norm(a){ while(a>Math.PI) a-=2*Math.PI; while(a<-Math.PI) a+=2*Math.PI; return a; }
+
+    // ---------- geometry helpers ----------
+    function getCorners(cx,cy,angle,len,wid){
+        const hl=len/2, hw=wid/2;
+        const c=Math.cos(angle), s=Math.sin(angle);
+        const local=[[hl,hw],[hl,-hw],[-hl,-hw],[-hl,hw]];
+        return local.map(([lx,ly])=>({x:cx+lx*c-ly*s, y:cy+lx*s+ly*c}));
+    }
+    function axesOf(corners){
+        const axes=[];
+        for(let i=0;i<2;i++){
+            const p1=corners[i], p2=corners[i+1];
+            const edge={x:p2.x-p1.x, y:p2.y-p1.y};
+            const normal={x:-edge.y, y:edge.x};
+            const len=Math.hypot(normal.x,normal.y)||1;
+            axes.push({x:normal.x/len, y:normal.y/len});
+        }
+        return axes;
+    }
+    function project(corners, axis){
+        let min=Infinity, max=-Infinity;
+        for(const p of corners){
+            const d = p.x*axis.x + p.y*axis.y;
+            if(d<min) min=d; if(d>max) max=d;
+        }
+        return [min,max];
+    }
+    function rectsOverlap(rectA, rectB){
+        const cA = getCorners(rectA.cx,rectA.cy,rectA.angle,rectA.len,rectA.wid);
+        const cB = getCorners(rectB.cx,rectB.cy,rectB.angle,rectB.len,rectB.wid);
+        const axes = [...axesOf(cA), ...axesOf(cB)];
+        for(const axis of axes){
+            const [minA,maxA] = project(cA,axis);
+            const [minB,maxB] = project(cB,axis);
+            if(maxA < minB || maxB < minA) return false;
+        }
+        return true;
+    }
+    function isRectFullyInside(inner, outer){
+        const corners = getCorners(inner.cx,inner.cy,inner.angle,inner.len,inner.wid);
+        const c = Math.cos(-outer.angle), s = Math.sin(-outer.angle);
+        const hl = outer.len/2, hw = outer.wid/2;
+        return corners.every(p=>{
+            const dx=p.x-outer.cx, dy=p.y-outer.cy;
+            const lx = dx*c - dy*s;
+            const ly = dx*s + dy*c;
+            return Math.abs(lx) <= hl+0.01 && Math.abs(ly) <= hw+0.01;
+        });
+    }
+
+    // ---------- layout builder ----------
+    function buildLayout(mode){
+        const numBays = 5;
+        const mid = 2;
+        const bayLength = 170;
+        const gap = 8;
+        let bayWidth, thetaBay, obstacleIdx, anchor, laneAlongBase, laneDepthBase;
+        if(mode==='easy'){
+            bayWidth=80; thetaBay=deg2rad(90); obstacleIdx=[];
+            anchor={x:W/2,y:190}; laneAlongBase=-220; laneDepthBase=-90;
+        } else if(mode==='angled'){
+            bayWidth=80; thetaBay=deg2rad(125); obstacleIdx=[];
+            anchor={x:470,y:280}; laneAlongBase=-170; laneDepthBase=-70;
+        } else {
+            bayWidth=56; thetaBay=deg2rad(90); obstacleIdx=[1,3];
+            anchor={x:W/2,y:190}; laneAlongBase=-220; laneDepthBase=-90;
+        }
+
+        const rowAxisAngle = thetaBay - Math.PI/2;
+        const step = bayWidth + gap;
+
+        const slots = [];
+        for(let i=0;i<numBays;i++){
+            const along = (i-mid)*step;
+            const cx = anchor.x + along*Math.cos(rowAxisAngle) + (bayLength/2)*Math.cos(thetaBay);
+            const cy = anchor.y + along*Math.sin(rowAxisAngle) + (bayLength/2)*Math.sin(thetaBay);
+            slots.push({
+                cx, cy, angle: thetaBay, len: bayLength, wid: bayWidth,
+                type: i===mid ? 'target' : (obstacleIdx.includes(i) ? 'obstacle' : 'empty')
+            });
+        }
+        const rowSpan = numBays*step + 40;
+        const wallCx = anchor.x + (bayLength+6)*Math.cos(thetaBay);
+        const wallCy = anchor.y + (bayLength+6)*Math.sin(thetaBay);
+        const wall = { cx: wallCx, cy: wallCy, angle: rowAxisAngle, len: rowSpan, wid: 12 };
+
+        const jitter = (Math.random()-0.5)*30;
+        const jitterAng = (Math.random()-0.5)*deg2rad(10);
+        const laneOffsetAlong = laneAlongBase + jitter;
+        const laneOffsetDepth = laneDepthBase;
+        const startX = anchor.x + laneOffsetAlong*Math.cos(rowAxisAngle) + laneOffsetDepth*Math.cos(thetaBay);
+        const startY = anchor.y + laneOffsetAlong*Math.sin(rowAxisAngle) + laneOffsetDepth*Math.sin(thetaBay);
+
+        return {
+            mode, thetaBay, rowAxisAngle, slots, wall,
+            target: slots[mid],
+            start: { x:startX, y:startY, theta: rowAxisAngle + jitterAng, delta:0, v:0 }
+        };
+    }
+
+    // ---------- state ----------
+    let layout = null;
+    let bike = null;
+    let bumps = 0;
+    let success = false;
+    let bumpFlashUntil = 0;
+    let wasColliding = false;
+    let currentMode = 'easy';
+
+    const input = { left:false, right:false, center:false, fwd:false, rev:false, brake:false };
+
+    function resetGame(mode){
+        currentMode = mode;
+        layout = buildLayout(mode);
+        bike = Object.assign({}, layout.start);
+        bumps = 0;
+        success = false;
+        wasColliding = false;
+        document.getElementById('successOverlay').classList.remove('show');
+        document.getElementById('hudBumps').textContent = '0';
+        document.getElementById('hudStatus').textContent = '準備出發';
+        document.querySelectorAll('.mode-btn').forEach(b=>{
+            b.classList.toggle('active', b.dataset.mode===mode);
+        });
+    }
+
+    function footprintRect(b){
+        return {
+            cx: b.x + FOOTPRINT_OFFSET*Math.cos(b.theta),
+            cy: b.y + FOOTPRINT_OFFSET*Math.sin(b.theta),
+            angle: b.theta, len: TOTAL_LEN, wid: BIKE_WIDTH
+        };
+    }
+
+    function checkCollision(b){
+        const fp = footprintRect(b);
+        const corners = getCorners(fp.cx,fp.cy,fp.angle,fp.len,fp.wid);
+        for(const p of corners){
+            if(p.x<2 || p.x>W-2 || p.y<2 || p.y>H-2) return true;
+        }
+        if(rectsOverlap(fp, layout.wall)) return true;
+        for(const s of layout.slots){
+            if(s.type==='obstacle' && rectsOverlap(fp, s)) return true;
+        }
+        return false;
+    }
+
+    function checkSuccess(b){
+        if(Math.abs(b.v) > 4) return false;
+        const fp = footprintRect(b);
+        if(!isRectFullyInside(fp, layout.target)) return false;
+        const headingDiff = Math.abs(norm(b.theta - layout.thetaBay));
+        return headingDiff <= deg2rad(12);
+    }
+
+    function predictPath(b){
+        const pts = [];
+        let v = Math.abs(b.v) > 5 ? b.v : 60;
+        let x=b.x, y=b.y, theta=b.theta;
+        const delta = b.delta;
+        const dt = 0.05;
+        for(let i=0;i<40;i++){
+            theta += (v/WHEELBASE)*Math.tan(delta)*dt;
+            x += v*Math.cos(theta)*dt;
+            y += v*Math.sin(theta)*dt;
+            pts.push({x,y});
+        }
+        return pts;
+    }
+
+    // ---------- physics step ----------
+    let lastT = null;
+    function step(ts){
+        if(lastT===null) lastT = ts;
+        let dt = (ts-lastT)/1000;
+        lastT = ts;
+        dt = Math.min(dt, 0.05);
+
+        if(!success){
+            if(input.left) bike.delta -= STEER_RATE*dt;
+            if(input.right) bike.delta += STEER_RATE*dt;
+            if(input.center){
+                const s = Math.sign(bike.delta);
+                bike.delta -= s*Math.min(Math.abs(bike.delta), STEER_RATE*dt);
+            }
+            bike.delta = Math.max(-MAX_STEER, Math.min(MAX_STEER, bike.delta));
+
+            if(input.brake){
+                const dec = Math.sign(bike.v)*BRAKE_DECEL*dt;
+                if(Math.abs(bike.v) <= Math.abs(dec)) bike.v = 0;
+                else bike.v -= dec;
+            } else {
+                let targetV = 0;
+                if(input.fwd && !input.rev) targetV = MAX_FWD;
+                else if(input.rev && !input.fwd) targetV = -MAX_REV;
+                const diff = targetV - bike.v;
+                const rate = targetV===0 ? COAST_DECEL : ACCEL;
+                const stepv = Math.sign(diff)*Math.min(Math.abs(diff), rate*dt);
+                bike.v += stepv;
+            }
+
+            const prev = { x:bike.x, y:bike.y, theta:bike.theta };
+            const newTheta = bike.theta + (bike.v/WHEELBASE)*Math.tan(bike.delta)*dt;
+            const newX = bike.x + bike.v*Math.cos(newTheta)*dt;
+            const newY = bike.y + bike.v*Math.sin(newTheta)*dt;
+            const trial = { x:newX, y:newY, theta:newTheta, delta:bike.delta, v:bike.v };
+
+            if(checkCollision(trial)){
+                bike.x = prev.x; bike.y = prev.y; bike.theta = prev.theta;
+                bike.v = 0;
+                if(!wasColliding){
+                    bumps++;
+                    bumpFlashUntil = performance.now() + 250;
+                    document.getElementById('hudBumps').textContent = bumps;
+                    canvas.classList.remove('bump'); void canvas.offsetWidth; canvas.classList.add('bump');
+                }
+                wasColliding = true;
+            } else {
+                bike.x = newX; bike.y = newY; bike.theta = newTheta;
+                wasColliding = false;
+            }
+
+            if(checkSuccess(bike)){
+                success = true;
+                bike.v = 0;
+                document.getElementById('successOverlay').classList.add('show');
+                document.getElementById('hudStatus').textContent = '✅ 停車成功';
+            } else {
+                document.getElementById('hudStatus').textContent = Math.abs(bike.v)<1 ? '靜止' : '行進中';
+            }
+        }
+
+        render();
+        updateHud();
+        requestAnimationFrame(step);
+    }
+
+    // ---------- rendering ----------
+    function drawSlotRect(rect, fillStyle, strokeStyle, dashed){
+        const c = getCorners(rect.cx,rect.cy,rect.angle,rect.len,rect.wid);
+        ctx.beginPath();
+        ctx.moveTo(c[0].x,c[0].y);
+        for(let i=1;i<4;i++) ctx.lineTo(c[i].x,c[i].y);
+        ctx.closePath();
+        if(fillStyle){ ctx.fillStyle = fillStyle; ctx.fill(); }
+        if(strokeStyle){
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = 3;
+            if(dashed) ctx.setLineDash([8,6]); else ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
+
+    function drawParkedBike(rect){
+        drawBikeShape(rect.cx, rect.cy, rect.angle, 0, '#7f8c8d', '#5d6d7e');
+    }
+
+    function roundRectPath(x,y,w,h,r){
+        ctx.beginPath();
+        ctx.moveTo(x+r,y);
+        ctx.arcTo(x+w,y,x+w,y+h,r);
+        ctx.arcTo(x+w,y+h,x,y+h,r);
+        ctx.arcTo(x,y+h,x,y,r);
+        ctx.arcTo(x,y,x+w,y,r);
+        ctx.closePath();
+    }
+
+    function drawBikeShape(x,y,theta,delta,bodyColor,wheelColor){
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.rotate(theta);
+        // body (local x = forward)
+        ctx.fillStyle = bodyColor;
+        roundRectPath(-REAR_OVERHANG, -BIKE_WIDTH/2, TOTAL_LEN, BIKE_WIDTH, 7);
+        ctx.fill();
+        // front direction marker
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.beginPath();
+        ctx.moveTo(WHEELBASE+FRONT_OVERHANG-2, 0);
+        ctx.lineTo(WHEELBASE-6, -6);
+        ctx.lineTo(WHEELBASE-6, 6);
+        ctx.closePath();
+        ctx.fill();
+        // rear wheel
+        ctx.fillStyle = wheelColor;
+        ctx.fillRect(-7,-4,14,8);
+        // front wheel (rotates with steering delta)
+        ctx.save();
+        ctx.translate(WHEELBASE,0);
+        ctx.rotate(delta);
+        ctx.fillStyle = wheelColor;
+        ctx.fillRect(-8,-4,16,8);
+        ctx.restore();
+        ctx.restore();
+    }
+
+    function render(){
+        ctx.clearRect(0,0,W,H);
+        // asphalt
+        ctx.fillStyle = '#3a3f47';
+        ctx.fillRect(0,0,W,H);
+        // lane texture stripes (subtle)
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        for(let i=0;i<H;i+=24){ ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(W,i); ctx.stroke(); }
+
+        // slots
+        for(const s of layout.slots){
+            if(s.type==='target'){
+                drawSlotRect(s, 'rgba(46,204,113,0.18)', '#2ecc71', true);
+            } else {
+                drawSlotRect(s, null, 'rgba(255,255,255,0.55)', false);
+            }
+        }
+        // wall / curb
+        drawSlotRect(layout.wall, '#20242b', '#111418', false);
+
+        // obstacles
+        for(const s of layout.slots){
+            if(s.type==='obstacle') drawParkedBike(s);
+        }
+
+        // predicted path
+        if(document.getElementById('chkPredict').checked && !success){
+            const pts = predictPath(bike);
+            ctx.strokeStyle = '#e67e22';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([6,6]);
+            ctx.beginPath();
+            pts.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const last = pts[pts.length-1];
+            ctx.fillStyle = '#e67e22';
+            ctx.beginPath();
+            ctx.arc(last.x,last.y,4,0,Math.PI*2);
+            ctx.fill();
+        }
+
+        // bike
+        const bodyColor = success ? '#2ecc71' : '#3498db';
+        drawBikeShape(bike.x, bike.y, bike.theta, bike.delta, bodyColor, '#1c2833');
+
+        if(performance.now() < bumpFlashUntil){
+            ctx.strokeStyle = 'rgba(231,76,60,0.9)';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(4,4,W-8,H-8);
+        }
+    }
+
+    function updateHud(){
+        const kmh = Math.abs(bike.v) * 3.6 / (45/1); // 45px ~ 1m
+        document.getElementById('hudSpeed').textContent = kmh.toFixed(1) + ' km/h';
+        document.getElementById('hudGear').textContent = bike.v > 1 ? '前進' : (bike.v < -1 ? '倒退' : '空檔');
+
+        const deg = rad2deg(bike.delta);
+        document.getElementById('steerDeg').textContent = Math.round(deg) + '°';
+        const pct = 50 + (deg / rad2deg(MAX_STEER)) * 50;
+        document.getElementById('steerMarker').style.left = Math.max(2,Math.min(98,pct)) + '%';
+
+        const headingDeg = rad2deg(bike.theta);
+        document.getElementById('compassArrow').style.transform = `rotate(${headingDeg}deg)`;
+        let normDeg = Math.round(((headingDeg % 360) + 360) % 360);
+        document.getElementById('compassText').textContent = compassLabel(normDeg) + `（${normDeg}°）`;
+    }
+
+    function compassLabel(deg){
+        if(deg < 22.5 || deg >= 337.5) return '朝右';
+        if(deg < 67.5) return '朝右下';
+        if(deg < 112.5) return '朝下';
+        if(deg < 157.5) return '朝左下';
+        if(deg < 202.5) return '朝左';
+        if(deg < 247.5) return '朝左上';
+        if(deg < 292.5) return '朝上';
+        return '朝右上';
+    }
+
+    // ---------- input wiring ----------
+    function bindHold(el, onDown, onUp){
+        const down = (e)=>{ e.preventDefault(); onDown(); el.classList.add('pressed'); };
+        const up = (e)=>{ onUp(); el.classList.remove('pressed'); };
+        el.addEventListener('pointerdown', down);
+        el.addEventListener('pointerup', up);
+        el.addEventListener('pointerleave', up);
+        el.addEventListener('pointercancel', up);
+    }
+    bindHold(document.getElementById('btnLeft'), ()=>input.left=true, ()=>input.left=false);
+    bindHold(document.getElementById('btnRight'), ()=>input.right=true, ()=>input.right=false);
+    bindHold(document.getElementById('btnCenter'), ()=>input.center=true, ()=>input.center=false);
+    bindHold(document.getElementById('btnFwd'), ()=>input.fwd=true, ()=>input.fwd=false);
+    bindHold(document.getElementById('btnRev'), ()=>input.rev=true, ()=>input.rev=false);
+    bindHold(document.getElementById('btnBrake'), ()=>input.brake=true, ()=>input.brake=false);
+
+    document.getElementById('btnReset').addEventListener('click', ()=>resetGame(currentMode));
+    document.querySelectorAll('.mode-btn').forEach(b=>{
+        b.addEventListener('click', ()=>resetGame(b.dataset.mode));
+    });
+
+    const keyMap = {
+        'ArrowLeft':'left','a':'left','A':'left',
+        'ArrowRight':'right','d':'right','D':'right',
+        'ArrowUp':'fwd','w':'fwd','W':'fwd',
+        'ArrowDown':'rev','s':'rev','S':'rev',
+        ' ':'brake',
+        'c':'center','C':'center'
+    };
+    window.addEventListener('keydown', (e)=>{
+        const k = keyMap[e.key];
+        if(k){ input[k]=true; e.preventDefault(); }
+    });
+    window.addEventListener('keyup', (e)=>{
+        const k = keyMap[e.key];
+        if(k){ input[k]=false; e.preventDefault(); }
+    });
+
+    window.resetGame = resetGame;
+    Object.defineProperty(window, 'currentMode', { get(){ return currentMode; } });
+
+    resetGame('easy');
+    requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
