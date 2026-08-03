@@ -2,178 +2,304 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>機車停車模擬器 - 龍頭與車身方向練習</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>機車停車模擬器｜龍頭轉向練習</title>
 <style>
+    :root {
+        --asphalt-950: #17181c;
+        --asphalt-100: #ecebe3;
+        --paint-yellow: #f2b705;
+        --paint-yellow-ink: #3c2e05;
+        --brake-red: #c94a3f;
+        --bay-green: #3f9d6d;
+        --ink-900: #1d1f22;
+        --ink-050: #ece9e0;
+        --line-grey: #8d93a0;
+
+        --bg: var(--asphalt-100);
+        --text: var(--ink-900);
+        --text-dim: #55595f;
+        --panel: #ffffff;
+        --panel-border: #d9d5c7;
+        --divider: #b9b4a3;
+        --accent: var(--paint-yellow);
+        --accent-ink: var(--paint-yellow-ink);
+        --danger: var(--brake-red);
+        --success: var(--bay-green);
+        --chip-bg: #f2f0e7;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: var(--asphalt-950);
+            --text: var(--ink-050);
+            --text-dim: #a3a8b2;
+            --panel: #202227;
+            --panel-border: #34363c;
+            --divider: #45484f;
+            --chip-bg: #2a2c32;
+        }
+    }
+    :root[data-theme="dark"] {
+        --bg: var(--asphalt-950);
+        --text: var(--ink-050);
+        --text-dim: #a3a8b2;
+        --panel: #202227;
+        --panel-border: #34363c;
+        --divider: #45484f;
+        --chip-bg: #2a2c32;
+    }
+    :root[data-theme="light"] {
+        --bg: var(--asphalt-100);
+        --text: var(--ink-900);
+        --text-dim: #55595f;
+        --panel: #ffffff;
+        --panel-border: #d9d5c7;
+        --divider: #b9b4a3;
+        --chip-bg: #f2f0e7;
+    }
+
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
     body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-        color: #2c3e50;
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
         min-height: 100vh;
-        padding: 12px;
+        padding: 20px 14px 60px;
         display: flex;
         justify-content: center;
     }
-    .wrap { width: 100%; max-width: 960px; }
-    h1 { font-size: 18px; text-align:center; margin-bottom: 4px; }
-    .subtitle { text-align:center; font-size:12px; color:#666; margin-bottom:12px; }
+    .wrap { width:100%; max-width: 980px; }
 
-    .modes {
-        display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; justify-content:center;
+    .masthead {
+        display:flex; align-items:flex-end; gap:14px; margin-bottom:4px;
+    }
+    .p-mark {
+        width:44px; height:44px; border-radius:50%; border:3px solid var(--text);
+        display:flex; align-items:center; justify-content:center;
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight:700; font-size:22px; flex-shrink:0;
+    }
+    .masthead h1 {
+        font-family: "Arial Narrow", "Roboto Condensed", -apple-system, sans-serif;
+        font-weight:800; font-size: clamp(22px, 4vw, 30px);
+        letter-spacing: 0.01em; text-wrap: balance; line-height:1.05;
+    }
+    .eyebrow {
+        font-family: "Arial Narrow", "Roboto Condensed", -apple-system, sans-serif;
+        font-weight:700; font-size:11px; letter-spacing:0.22em; text-transform:uppercase;
+        color: var(--text-dim); margin-bottom:2px;
+    }
+    .subtitle {
+        font-size:13px; color: var(--text-dim); margin: 6px 0 18px 58px; max-width:60ch;
+    }
+
+    .gearshift {
+        display:flex; gap:0; margin-bottom:16px; border-bottom:1px solid var(--divider);
     }
     .mode-btn {
-        flex:1; min-width:110px; padding:9px 6px; border-radius:8px; border:2px solid #d5dce0;
-        background:white; font-size:13px; font-weight:600; cursor:pointer; color:#34495e;
-        transition: all .15s;
+        flex:1; background:none; border:none; cursor:pointer;
+        padding: 10px 6px 12px; color: var(--text-dim);
+        display:flex; flex-direction:column; align-items:center; gap:3px;
+        position:relative; font-family:inherit;
     }
-    .mode-btn.active { border-color:#3498db; background:linear-gradient(135deg,#5dade2 0%,#3498db 100%); color:white; }
+    .mode-btn .gear-num {
+        font-family: "Arial Narrow","Roboto Condensed",-apple-system,sans-serif;
+        font-weight:800; font-size:11px; letter-spacing:0.15em;
+    }
+    .mode-btn .gear-label { font-size:13.5px; font-weight:600; color: var(--text); }
+    .mode-btn::after {
+        content:""; position:absolute; left:10%; right:10%; bottom:-1px; height:3px;
+        background: var(--accent); transform: scaleX(0); transition: transform .18s ease;
+    }
+    .mode-btn.active::after { transform: scaleX(1); }
+    .mode-btn.active .gear-num { color: var(--accent-ink); background: var(--accent); padding:1px 6px; border-radius:2px; }
 
     .board {
-        background: linear-gradient(to bottom, #ffffff, #f8fafb);
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        padding: 10px;
-        margin-bottom: 10px;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 4px;
+        padding: 12px;
     }
 
     .canvas-holder { position:relative; width:100%; }
-    canvas:focus { outline: 3px solid #3498db; outline-offset: -3px; }
+    canvas:focus { outline: 3px solid var(--accent); outline-offset: -3px; }
     .focus-hint {
         position:absolute; left:50%; top:10px; transform:translateX(-50%);
         background: rgba(0,0,0,0.72); color:#fff; font-size:12px; padding:6px 12px;
-        border-radius:6px; pointer-events:none; transition: opacity .3s; white-space:nowrap;
-        max-width:92%; text-align:center; white-space:normal;
+        border-radius:3px; pointer-events:none; transition: opacity .3s;
+        max-width:92%; text-align:center;
     }
     .focus-hint.hidden { opacity:0; }
     canvas {
-        width: 100%;
-        height: auto;
-        display:block;
-        border-radius: 8px;
-        background:#2f333a;
-        touch-action: none;
+        width:100%; height:auto; display:block; border-radius:2px; background:#2f333a;
+        touch-action:none;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
     }
     canvas.bump { animation: flashRed .25s ease; }
     @keyframes flashRed {
-        0% { box-shadow: 0 0 0 6px rgba(231,76,60,0.9) inset; }
-        100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
+        0% { box-shadow: inset 0 0 0 6px rgba(201,74,63,0.9); }
+        100% { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35); }
     }
 
     .success-overlay {
         position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-        background: rgba(20,30,20,0.55); border-radius:8px; flex-direction:column; gap:10px;
+        background: rgba(10,14,10,0.6); flex-direction:column; gap:10px;
         opacity:0; pointer-events:none; transition: opacity .25s;
     }
     .success-overlay.show { opacity:1; pointer-events:auto; }
     .success-card {
-        background:white; padding:20px 26px; border-radius:12px; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.3);
+        background: var(--panel); padding:22px 28px; border-top:4px solid var(--success);
+        text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.4); min-width:220px;
     }
-    .success-card .big { font-size:22px; font-weight:700; color:#1abc9c; margin-bottom:6px; }
-    .success-card .small { font-size:13px; color:#666; margin-bottom:14px; }
+    .success-card .badge {
+        display:inline-block; font-family:"Arial Narrow","Roboto Condensed",sans-serif;
+        font-weight:800; letter-spacing:0.14em; font-size:11px; text-transform:uppercase;
+        color:#fff; background: var(--success); padding:3px 10px; margin-bottom:10px;
+    }
+    .success-card .big { font-size:20px; font-weight:700; margin-bottom:4px; }
+    .success-card .small { font-size:12.5px; color: var(--text-dim); margin-bottom:16px; }
     .success-card button {
-        padding:9px 18px; border:none; border-radius:6px; background:linear-gradient(135deg,#48c774 0%,#1abc9c 100%);
-        color:white; font-weight:700; cursor:pointer; font-size:14px;
+        padding:9px 20px; border:none; cursor:pointer; font-weight:700; font-size:13.5px;
+        background: var(--accent); color: var(--accent-ink);
     }
 
-    /* HUD */
-    .hud {
-        display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-top:10px;
+    .dash { display:grid; grid-template-columns: repeat(4, 1fr); gap:1px; margin-top:12px;
+        background: var(--divider); border:1px solid var(--divider);
     }
-    .hud-item {
-        background:#f5f7fa; border-radius:8px; padding:8px 10px; text-align:center;
+    .dash-item { background: var(--panel); padding:9px 8px; text-align:center; }
+    .dash-item .label {
+        font-family:"Arial Narrow","Roboto Condensed",sans-serif;
+        font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:3px;
     }
-    .hud-item .label { font-size:11px; color:#888; font-weight:600; margin-bottom:4px; }
-    .hud-item .value { font-size:14px; font-weight:700; color:#2c3e50; }
+    .dash-item .value {
+        font-family: ui-monospace, "SF Mono", "Roboto Mono", monospace;
+        font-variant-numeric: tabular-nums; font-size:15px; font-weight:600;
+    }
+    .dash-item .value.status-ok { color: var(--success); }
 
-    .gauge-row { display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap; }
-    .gauge-box { flex:1; min-width:200px; background:#f5f7fa; border-radius:8px; padding:10px; }
-    .gauge-title { font-size:11px; font-weight:700; color:#666; margin-bottom:6px; }
-
-    /* steering bar gauge */
-    .steer-bar-track {
-        position:relative; height:14px; border-radius:7px; background:#e0e3e8; overflow:visible;
+    .gauge-row { display:flex; gap:1px; margin-top:1px; background:var(--divider); border:1px solid var(--divider); border-top:none; }
+    .gauge-box { flex:1; background:var(--panel); padding:12px; }
+    .gauge-title {
+        font-family:"Arial Narrow","Roboto Condensed",sans-serif;
+        font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px;
     }
-    .steer-bar-center { position:absolute; left:50%; top:-3px; width:2px; height:20px; background:#aaa; }
-    .steer-bar-fill { position:absolute; top:0; height:14px; background:linear-gradient(135deg,#5dade2,#3498db); border-radius:7px; }
+
+    .steer-bar-track { position:relative; height:10px; background: var(--chip-bg); border:1px solid var(--panel-border); }
+    .steer-bar-center { position:absolute; left:50%; top:-4px; width:1px; height:18px; background:var(--divider); }
     .steer-bar-marker {
-        position:absolute; top:-5px; width:4px; height:24px; background:#e67e22; border-radius:2px;
+        position:absolute; top:-6px; width:3px; height:22px; background: var(--accent);
         transform: translateX(-50%); transition: left .05s linear;
     }
-    .steer-labels { display:flex; justify-content:space-between; font-size:10px; color:#999; margin-top:3px; }
+    .steer-labels {
+        display:flex; justify-content:space-between; font-size:10px; color:var(--text-dim); margin-top:5px;
+        font-family: ui-monospace, "SF Mono", monospace;
+    }
+    #steerDeg { font-weight:700; color:var(--text); }
 
-    /* compass */
-    .compass-wrap { display:flex; align-items:center; gap:10px; }
+    .compass-wrap { display:flex; align-items:center; gap:12px; }
     .compass {
-        width:60px; height:60px; border-radius:50%; background:white; border:2px solid #d5dce0;
-        position:relative; flex-shrink:0;
+        width:56px; height:56px; border-radius:50%; background:var(--chip-bg);
+        border:1px solid var(--panel-border); position:relative; flex-shrink:0;
     }
     .compass .n,.compass .s,.compass .e,.compass .w {
-        position:absolute; font-size:9px; color:#aaa; font-weight:700;
+        position:absolute; font-size:8.5px; color:var(--text-dim); font-weight:700;
     }
     .compass .n { top:2px; left:50%; transform:translateX(-50%); }
     .compass .s { bottom:2px; left:50%; transform:translateX(-50%); }
     .compass .e { right:3px; top:50%; transform:translateY(-50%); }
     .compass .w { left:3px; top:50%; transform:translateY(-50%); }
     .compass-arrow {
-        position:absolute; left:50%; top:50%; width:4px; height:24px;
-        background: linear-gradient(#e74c3c,#c0392b); border-radius:2px;
-        transform-origin: 50% 100%;
-        margin-left:-2px; margin-top:-24px;
+        position:absolute; left:50%; top:50%; width:3px; height:22px;
+        background: var(--danger); transform-origin: 50% 100%; margin-left:-1.5px; margin-top:-22px;
     }
-    .compass-dot { position:absolute; left:50%; top:50%; width:6px; height:6px; margin-left:-3px; margin-top:-3px; background:#2c3e50; border-radius:50%; }
-    .compass-text { font-size:12px; color:#555; }
+    .compass-dot { position:absolute; left:50%; top:50%; width:5px; height:5px; margin-left:-2.5px; margin-top:-2.5px; background:var(--text); border-radius:50%; }
+    .compass-text {
+        font-size:12px; color:var(--text-dim);
+        font-family: ui-monospace, "SF Mono", monospace;
+    }
 
-    /* controls */
     .controls {
-        display:flex; justify-content:space-between; gap:14px; margin-top:12px; flex-wrap:wrap;
+        display:flex; justify-content:space-between; gap:1px; margin-top:1px;
+        background:var(--divider); border:1px solid var(--divider); border-top:none;
     }
-    .ctrl-group { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; min-width:150px; }
-    .ctrl-group .grp-title { font-size:11px; color:#888; font-weight:700; margin-bottom:2px; }
+    .ctrl-group { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; background:var(--panel); padding:12px 8px; }
+    .ctrl-group .grp-title {
+        font-family:"Arial Narrow","Roboto Condensed",sans-serif;
+        font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim);
+    }
     .ctrl-row { display:flex; gap:8px; }
     .ctrl-btn {
-        width:64px; height:52px; border-radius:10px; border:none; font-size:20px; font-weight:700;
-        background:linear-gradient(to bottom,#ffffff,#eef1f4); border:2px solid #d5dce0; color:#34495e;
+        width:60px; height:50px; border:1px solid var(--panel-border); font-size:19px; font-weight:700;
+        background: var(--chip-bg); color: var(--text);
         cursor:pointer; user-select:none; touch-action:none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
-    .ctrl-btn:active, .ctrl-btn.pressed { background:linear-gradient(135deg,#5dade2,#3498db); color:white; border-color:#3498db; transform:translateY(1px); }
-    .ctrl-btn.brake:active, .ctrl-btn.brake.pressed { background:linear-gradient(135deg,#ff8a8a,#e74c3c); border-color:#e74c3c; }
+    .ctrl-btn:active, .ctrl-btn.pressed { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .ctrl-btn.brake:active, .ctrl-btn.brake.pressed { background: var(--danger); color:#fff; border-color: var(--danger); }
     .ctrl-btn.center-btn { font-size:12px; }
 
-    .bottom-row { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+    .bottom-row { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
     .util-btn {
-        padding:9px 16px; border-radius:8px; border:2px solid #d5dce0; background:white; font-size:13px;
-        font-weight:600; cursor:pointer; color:#34495e;
+        padding:9px 18px; border:1px solid var(--text); background:none; font-size:13px;
+        font-weight:700; cursor:pointer; color:var(--text);
+        font-family:"Arial Narrow","Roboto Condensed",sans-serif; letter-spacing:0.04em;
     }
-    .util-btn.primary { background:linear-gradient(135deg,#48c774 0%,#1abc9c 100%); color:white; border:none; }
+    .util-btn.primary { background: var(--text); color: var(--bg); border-color:var(--text); }
 
-    .toggle-row { display:flex; align-items:center; gap:6px; font-size:13px; color:#555; }
+    .toggle-row { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-dim); }
 
     .tips {
-        margin-top:14px; background:#fffbe8; border:1px solid #f0e3a8; border-radius:8px; padding:12px 14px;
-        font-size:12.5px; line-height:1.7; color:#6b5a1e;
+        margin-top:18px; background: var(--panel); border:1px solid var(--panel-border);
+        border-top: 6px solid transparent;
+        border-image: repeating-linear-gradient(-45deg, var(--accent) 0 10px, var(--ink-900) 10px 20px) 6;
+        padding:14px 16px; font-size:12.5px; line-height:1.75; color: var(--text-dim);
     }
-    .tips b { color:#4a3d10; }
-    .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:#666; margin-top:8px; }
-    .legend span { display:inline-flex; align-items:center; gap:4px; }
-    .swatch { width:12px; height:12px; border-radius:3px; display:inline-block; }
+    .tips b { color: var(--text); }
+    @media (prefers-color-scheme: dark) {
+        .tips { border-image: repeating-linear-gradient(-45deg, var(--accent) 0 10px, var(--asphalt-950) 10px 20px) 6; }
+    }
+    :root[data-theme="dark"] .tips { border-image: repeating-linear-gradient(-45deg, var(--accent) 0 10px, var(--asphalt-950) 10px 20px) 6; }
+    :root[data-theme="light"] .tips { border-image: repeating-linear-gradient(-45deg, var(--accent) 0 10px, var(--ink-900) 10px 20px) 6; }
 
-    @media (max-width:520px){
-        .ctrl-btn { width:56px; height:48px; font-size:18px; }
-        .hud { grid-template-columns: repeat(2,1fr); }
+    .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:var(--text-dim); margin-top:10px; }
+    .legend span { display:inline-flex; align-items:center; gap:5px; }
+    .swatch { width:11px; height:11px; display:inline-block; }
+
+    button:focus-visible, input:focus-visible, .mode-btn:focus-visible {
+        outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+
+    @media (max-width:560px) {
+        .subtitle { margin-left:0; }
+        .ctrl-btn { width:52px; height:46px; font-size:17px; }
+        .dash { grid-template-columns: repeat(2,1fr); }
+        .gauge-row { flex-direction:column; }
     }
 </style>
+
 </head>
 <body>
 <div class="wrap">
-    <h1>🏍️ 機車停車模擬器</h1>
+    <div class="masthead">
+        <div class="p-mark">P</div>
+        <div>
+            <div class="eyebrow">Steering &amp; heading trainer</div>
+            <h1>機車停車模擬器</h1>
+        </div>
+    </div>
     <div class="subtitle">練習「龍頭轉多少、車子往哪走」——低速入庫的方向感訓練</div>
 
-    <div class="modes">
-        <button class="mode-btn active" data-mode="easy">垂直車格（入門）</button>
-        <button class="mode-btn" data-mode="angled">斜角車格（進階）</button>
-        <button class="mode-btn" data-mode="hard">窄格夾車（挑戰）</button>
+    <div class="gearshift">
+        <button class="mode-btn active" data-mode="easy"><span class="gear-num">1檔</span><span class="gear-label">垂直車格</span></button>
+        <button class="mode-btn" data-mode="angled"><span class="gear-num">2檔</span><span class="gear-label">斜角車格</span></button>
+        <button class="mode-btn" data-mode="hard"><span class="gear-num">3檔</span><span class="gear-label">窄格夾車</span></button>
+        <button class="mode-btn" data-mode="scenarioA"><span class="gear-num">4檔</span><span class="gear-label">定位偏移</span></button>
+        <button class="mode-btn" data-mode="scenarioB"><span class="gear-num">5檔</span><span class="gear-label">側向切入</span></button>
+    </div>
+
+    <div class="tips scenario-hint" id="scenarioHint" style="display:none;">
+        <b>這個情境在練什麼：</b><span id="scenarioWhat"></span><br><br>
+        <b>解法：</b><span id="scenarioHow"></span>
     </div>
 
     <div class="board">
@@ -182,23 +308,24 @@
             <div class="focus-hint" id="focusHint">👆 先點一下畫面，方向鍵/WASD 才會生效；手機或不方便按鍵盤時，直接用下方按鈕</div>
             <div class="success-overlay" id="successOverlay">
                 <div class="success-card">
-                    <div class="big">🎉 停車成功！</div>
+                    <div class="badge">Parked</div>
+                    <div class="big">停車成功</div>
                     <div class="small" id="successDetail">車身已對齊車格</div>
                     <button onclick="resetGame(currentMode)">再玩一次</button>
                 </div>
             </div>
         </div>
 
-        <div class="hud">
-            <div class="hud-item"><div class="label">狀態</div><div class="value" id="hudStatus">準備出發</div></div>
-            <div class="hud-item"><div class="label">速度</div><div class="value" id="hudSpeed">0.0 km/h</div></div>
-            <div class="hud-item"><div class="label">檔位</div><div class="value" id="hudGear">空檔</div></div>
-            <div class="hud-item"><div class="label">碰撞次數</div><div class="value" id="hudBumps">0</div></div>
+        <div class="dash">
+            <div class="dash-item"><div class="label">狀態</div><div class="value" id="hudStatus">準備出發</div></div>
+            <div class="dash-item"><div class="label">速度</div><div class="value" id="hudSpeed">0.0 km/h</div></div>
+            <div class="dash-item"><div class="label">檔位</div><div class="value" id="hudGear">空檔</div></div>
+            <div class="dash-item"><div class="label">碰撞次數</div><div class="value" id="hudBumps">0</div></div>
         </div>
 
         <div class="gauge-row">
             <div class="gauge-box">
-                <div class="gauge-title">🏍️ 龍頭（前輪）角度 — 相對車身</div>
+                <div class="gauge-title">龍頭（前輪）角度 — 相對車身</div>
                 <div class="steer-bar-track">
                     <div class="steer-bar-center"></div>
                     <div class="steer-bar-marker" id="steerMarker" style="left:50%"></div>
@@ -206,7 +333,7 @@
                 <div class="steer-labels"><span>← 左滿舵</span><span id="steerDeg">0°</span><span>右滿舵 →</span></div>
             </div>
             <div class="gauge-box">
-                <div class="gauge-title">🧭 車身朝向（實際移動方向）</div>
+                <div class="gauge-title">車身朝向（實際移動方向）</div>
                 <div class="compass-wrap">
                     <div class="compass">
                         <span class="n">前</span><span class="s">後</span><span class="e">右</span><span class="w">左</span>
@@ -220,7 +347,7 @@
 
         <div class="controls">
             <div class="ctrl-group">
-                <div class="grp-title">龍頭（方向）</div>
+                <div class="grp-title">龍頭方向</div>
                 <div class="ctrl-row">
                     <button class="ctrl-btn" id="btnLeft">◀</button>
                     <button class="ctrl-btn center-btn" id="btnCenter">回正</button>
@@ -228,7 +355,7 @@
                 </div>
             </div>
             <div class="ctrl-group">
-                <div class="grp-title">油門 / 煞車</div>
+                <div class="grp-title">油門／煞車</div>
                 <div class="ctrl-row">
                     <button class="ctrl-btn" id="btnRev">▼</button>
                     <button class="ctrl-btn brake" id="btnBrake">■</button>
@@ -238,7 +365,7 @@
         </div>
 
         <div class="bottom-row">
-            <button class="util-btn primary" id="btnReset">🔄 重新開始（同車位）</button>
+            <button class="util-btn primary" id="btnReset">重新開始（同車位）</button>
             <label class="toggle-row"><input type="checkbox" id="chkPredict" checked> 顯示預測路徑</label>
         </div>
 
@@ -350,7 +477,7 @@
         const bayLength = 140;
         const gap = 8;
         let bayWidth, thetaBay, obstacleIdx, anchor, laneAlongBase, laneDepthBase;
-        if(mode==='easy'){
+        if(mode==='easy' || mode==='scenarioA' || mode==='scenarioB'){
             bayWidth=64; thetaBay=deg2rad(90); obstacleIdx=[];
             anchor={x:W/2,y:190}; laneAlongBase=-220; laneDepthBase=-90;
         } else if(mode==='angled'){
@@ -379,19 +506,57 @@
         const wallCy = anchor.y + (bayLength+6)*Math.sin(thetaBay);
         const wall = { cx: wallCx, cy: wallCy, angle: rowAxisAngle, len: rowSpan, wid: 12 };
 
-        const jitter = (Math.random()-0.5)*30;
-        const jitterAng = (Math.random()-0.5)*deg2rad(10);
-        const laneOffsetAlong = laneAlongBase + jitter;
-        const laneOffsetDepth = laneDepthBase;
-        const startX = anchor.x + laneOffsetAlong*Math.cos(rowAxisAngle) + laneOffsetDepth*Math.cos(thetaBay);
-        const startY = anchor.y + laneOffsetAlong*Math.sin(rowAxisAngle) + laneOffsetDepth*Math.sin(thetaBay);
+        let start;
+        if(mode==='scenarioA'){
+            // body already faces straight into the row (heading is "correct"),
+            // but the whole bike is parked off to one side of the target —
+            // a pure lateral-offset problem, no turning-in needed.
+            const side = Math.random()<0.5 ? -1 : 1;
+            const along = side * step * 1.1;
+            start = {
+                x: anchor.x + along*Math.cos(rowAxisAngle) + (-95)*Math.cos(thetaBay),
+                y: anchor.y + along*Math.sin(rowAxisAngle) + (-95)*Math.sin(thetaBay),
+                theta: thetaBay, delta:0, v:0
+            };
+        } else if(mode==='scenarioB'){
+            // body is parallel to the row itself (perpendicular to the bay's
+            // entry direction) — like riding past the row and needing to
+            // peel off with a sharp turn into the target.
+            const side = Math.random()<0.5 ? -1 : 1;
+            const along = side * step * 0.9;
+            start = {
+                x: anchor.x + along*Math.cos(rowAxisAngle) + (-55)*Math.cos(thetaBay),
+                y: anchor.y + along*Math.sin(rowAxisAngle) + (-55)*Math.sin(thetaBay),
+                theta: rowAxisAngle + (side<0 ? 0 : Math.PI), delta:0, v:0
+            };
+        } else {
+            const jitter = (Math.random()-0.5)*30;
+            const jitterAng = (Math.random()-0.5)*deg2rad(10);
+            const laneOffsetAlong = laneAlongBase + jitter;
+            const laneOffsetDepth = laneDepthBase;
+            const startX = anchor.x + laneOffsetAlong*Math.cos(rowAxisAngle) + laneOffsetDepth*Math.cos(thetaBay);
+            const startY = anchor.y + laneOffsetAlong*Math.sin(rowAxisAngle) + laneOffsetDepth*Math.sin(thetaBay);
+            start = { x:startX, y:startY, theta: rowAxisAngle + jitterAng, delta:0, v:0 };
+        }
 
         return {
             mode, thetaBay, rowAxisAngle, slots, wall,
             target: slots[mid],
-            start: { x:startX, y:startY, theta: rowAxisAngle + jitterAng, delta:0, v:0 }
+            start
         };
     }
+
+    // ---------- scenario teaching copy ----------
+    const SCENARIO_INFO = {
+        scenarioA: {
+            what: '車頭方向已經對了，正對著車格要進去的方向，但整台車卡在巷道中間、沒有對準目標車格，左右偏了一段距離。',
+            how: '車身角度是對的，這種時候用龍頭硬扳很容易讓車頭跟著歪掉、方向反而錯了。訣竅是「小角度切一下、馬上回正」：先小幅度打龍頭讓車子斜移一小段，車身角度一偏就立刻回正繼續前進，重複幾次之字形的小修正，把整台車橫移到正對車格的位置，最後再對正、直線騎進去。'
+        },
+        scenarioB: {
+            what: '車身跟車格排列的方向平行（等於還沒轉向），要練習從這個角度轉進車格，很像騎車經過巷道、臨時要側身轉進去停的情況。',
+            how: '先放慢速度，把龍頭往目標車格那一側轉到接近滿舵，讓車身開始明顯轉向；等車頭角度轉得差不多對齊車格方向時，稍微催一點油門讓車子把整個身體帶進格內；進到格內之後把龍頭回正，再用小幅度修正對齊剩下的角度和位置。車速越慢，同樣的龍頭角度能轉出的彎越小，所以這個情境更要忍住不要催快。'
+        }
+    };
 
     // ---------- state ----------
     let layout = null;
@@ -417,6 +582,16 @@
         document.querySelectorAll('.mode-btn').forEach(b=>{
             b.classList.toggle('active', b.dataset.mode===mode);
         });
+
+        const hintEl = document.getElementById('scenarioHint');
+        const info = SCENARIO_INFO[mode];
+        if(info){
+            document.getElementById('scenarioWhat').textContent = info.what;
+            document.getElementById('scenarioHow').textContent = info.how;
+            hintEl.style.display = '';
+        } else {
+            hintEl.style.display = 'none';
+        }
     }
 
     function footprintRect(b){
